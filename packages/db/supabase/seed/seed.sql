@@ -2,9 +2,11 @@
 -- Reference data: the 10 CFA Level I topics with official weight ranges, plus an
 -- active 2026 curriculum version. Idempotent so it is safe to re-run.
 
+-- On conflict we intentionally leave is_active untouched so a re-seed never
+-- overrides an admin-chosen active curriculum version.
 insert into public.curriculum_versions (year, level, is_active, notes)
 values (2026, 'I', true, 'Initial active Level I curriculum version.')
-on conflict (year, level) do update set is_active = excluded.is_active;
+on conflict (year, level) do update set notes = excluded.notes;
 
 insert into public.topics (code, name, exam_weight_min, exam_weight_max, display_order)
 values

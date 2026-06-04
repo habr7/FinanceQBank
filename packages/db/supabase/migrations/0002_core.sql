@@ -58,7 +58,7 @@ create table public.source_documents (
   storage_path text,
   checksum text,
   curriculum_version_id uuid references public.curriculum_versions (id),
-  created_by uuid references public.profiles (id),
+  created_by uuid references public.profiles (id) on delete set null,
   created_at timestamptz not null default now()
 );
 
@@ -76,3 +76,4 @@ create table public.source_chunks (
 create index learning_objectives_topic_idx on public.learning_objectives (topic_code);
 create index learning_objectives_version_idx on public.learning_objectives (curriculum_version_id);
 create index source_chunks_document_idx on public.source_chunks (source_document_id);
+create index source_chunks_learning_objective_idx on public.source_chunks (learning_objective_id);

@@ -54,7 +54,7 @@ create table public.question_audits (
   findings jsonb not null default '{}'::jsonb,
   corrected_payload jsonb,
   model text,
-  reviewer_id uuid references public.profiles (id),
+  reviewer_id uuid references public.profiles (id) on delete set null,
   created_at timestamptz not null default now()
 );
 
@@ -68,7 +68,7 @@ create table public.content_jobs (
   error_message text,
   started_at timestamptz,
   finished_at timestamptz,
-  created_by uuid references public.profiles (id),
+  created_by uuid references public.profiles (id) on delete set null,
   created_at timestamptz not null default now()
 );
 
@@ -76,5 +76,6 @@ create index questions_status_idx on public.questions (status);
 create index questions_topic_idx on public.questions (topic_code);
 create index questions_topic_status_idx on public.questions (topic_code, status);
 create index question_options_question_idx on public.question_options (question_id);
+create index question_source_chunks_chunk_idx on public.question_source_chunks (source_chunk_id);
 create index question_audits_question_idx on public.question_audits (question_id);
 create index content_jobs_status_idx on public.content_jobs (status);

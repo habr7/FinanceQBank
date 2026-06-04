@@ -2,12 +2,6 @@
 -- Enable Row Level Security and define least-privilege policies.
 -- service_role bypasses RLS (it owns the content pipeline + Stripe webhook).
 
--- Grants. RLS still gates rows; grants gate which verbs a role may attempt.
-grant usage on schema public to anon, authenticated, service_role;
-grant select on public.topics, public.curriculum_versions to anon;
-grant select, insert, update, delete on all tables in schema public to authenticated;
-grant all on all tables in schema public to service_role;
-
 alter table public.profiles enable row level security;
 alter table public.curriculum_versions enable row level security;
 alter table public.topics enable row level security;
@@ -25,6 +19,28 @@ alter table public.bookmarks enable row level security;
 alter table public.user_question_notes enable row level security;
 alter table public.question_reports enable row level security;
 alter table public.spaced_repetition_cards enable row level security;
+
+-- Grants (applied after RLS is enabled). RLS gates rows; grants gate which verbs a
+-- role may attempt. Admin writes flow through the is_admin() "for all" policies below.
+grant usage on schema public to anon, authenticated, service_role;
+grant select on public.topics, public.curriculum_versions to anon;
+grant select, insert, update, delete on all tables in schema public to authenticated;
+grant all on all tables in schema public to service_role;
+
+-- Never expose the answer key to students/anon. correct_option is computed into
+-- attempts.is_correct server-side (set_attempt_is_correct) and surfaced post-answer
+-- only through trusted server code (service_role). A column-level REVOKE does NOT
+-- override a table-level SELECT grant, so we drop the table-level SELECT and re-grant
+-- SELECT on every column EXCEPT correct_option. (Explanation gating per attempt-state
+-- is enforced by the practice API in a later phase.) `select *` now fails for
+-- authenticated on questions — select explicit columns instead.
+revoke select on public.questions from authenticated;
+grant select (
+  id, curriculum_version_id, topic_code, learning_objective_id, difficulty, cognitive_level,
+  stem, vignette, explanation_md, formula_md, calculator_hint_md, common_trap_md, status,
+  quality_score, ai_confidence, ip_similarity_score, generated_by_model, validated_by_model,
+  prompt_version, published_at, created_at, updated_at
+) on public.questions to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- profiles: a user sees/edits only their own row; admins see all. Privileged
@@ -62,7 +78,7 @@ create policy topics_admin on public.topics
 -- Internal learning objectives: readable by authenticated users; admins manage.
 -- ---------------------------------------------------------------------------
 create policy learning_objectives_select on public.learning_objectives
-  for select to authenticated using (true);
+  for select to authenticated using (status = 'active' or public.is_admin());
 
 create policy learning_objectives_admin on public.learning_objectives
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
@@ -138,7 +154,7 @@ create policy spaced_repetition_cards_owner on public.spaced_repetition_cards
 -- Question reports: a user files + reads their own; admins read all + triage.
 -- ---------------------------------------------------------------------------
 create policy question_reports_insert on public.question_reports
-  for insert to authenticated with check (user_id = auth.uid());
+  for insert to authenticated with check (user_id = auth.uid() and auth.uid() is not null);
 
 create policy question_reports_select on public.question_reports
   for select to authenticated using (user_id = auth.uid() or public.is_admin());

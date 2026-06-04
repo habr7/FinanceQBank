@@ -22,6 +22,7 @@ $$;
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
+set search_path = public
 as $$
 begin
   new.updated_at = now();
@@ -77,6 +78,7 @@ create trigger on_auth_user_created
 create or replace function public.protect_profile_columns()
 returns trigger
 language plpgsql
+security invoker
 set search_path = public
 as $$
 begin
@@ -98,3 +100,25 @@ $$;
 create trigger profiles_protect_columns
   before update on public.profiles
   for each row execute function public.protect_profile_columns();
+
+-- Compute is_correct server-side from the question's correct_option so the client
+-- can never self-report a correct answer (correct_option is not even readable by
+-- students; see 0006 column grants). SECURITY DEFINER so it can read the answer key.
+create or replace function public.set_attempt_is_correct()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  new.is_correct := coalesce(
+    (select new.chosen_option = q.correct_option from public.questions q where q.id = new.question_id),
+    false
+  );
+  return new;
+end;
+$$;
+
+create trigger attempts_set_is_correct
+  before insert or update of chosen_option, question_id on public.attempts
+  for each row execute function public.set_attempt_is_correct();

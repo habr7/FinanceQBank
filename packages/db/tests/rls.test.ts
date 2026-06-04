@@ -17,12 +17,14 @@ describeDb("Row Level Security", () => {
   const adminId = randomUUID();
   let publishedQuestionId = "";
   let draftQuestionId = "";
+  let activeObjectiveId = "";
+  let draftObjectiveId = "";
 
-  /** Run `fn` inside a transaction acting as a given user, always rolling back. */
+  /** Run `fn` inside a transaction acting as a given role, always rolling back. */
   async function asUser<T>(
     userId: string | null,
     fn: (client: PoolClient) => Promise<T>,
-    role: "authenticated" | "anon" = "authenticated",
+    role: "authenticated" | "anon" | "service_role" = "authenticated",
   ): Promise<T> {
     const client = await pool.connect();
     try {
@@ -76,6 +78,20 @@ describeDb("Row Level Security", () => {
       publishedQuestionId = await insertQuestion("published");
       draftQuestionId = await insertQuestion("draft");
 
+      const insertObjective = async (status: string) =>
+        (
+          await admin.query(
+            `insert into public.learning_objectives
+               (curriculum_version_id, topic_code, module_name, objective_code, internal_objective, status)
+             values ($1, 'QM', 'Module', $2, 'Internal objective.', $3)
+             returning id`,
+            [versionId, `QM-OBJ-${status}`, status],
+          )
+        ).rows[0].id as string;
+
+      activeObjectiveId = await insertObjective("active");
+      draftObjectiveId = await insertObjective("draft");
+
       // Attempts owned by each student, and a report filed by user B.
       for (const uid of [userA, userB]) {
         await admin.query(
@@ -103,6 +119,9 @@ describeDb("Row Level Security", () => {
       ]);
       await cleanup.query("delete from public.questions where id = any($1::uuid[])", [
         [publishedQuestionId, draftQuestionId],
+      ]);
+      await cleanup.query("delete from public.learning_objectives where id = any($1::uuid[])", [
+        [activeObjectiveId, draftObjectiveId],
       ]);
     } finally {
       cleanup.release();
@@ -181,5 +200,74 @@ describeDb("Row Level Security", () => {
     await expect(
       asUser(null, (c) => c.query("select id from public.questions"), "anon"),
     ).rejects.toThrow();
+  });
+
+  it("students cannot read the answer key (correct_option column)", async () => {
+    await expect(
+      asUser(userA, (c) =>
+        c.query("select correct_option from public.questions where id = $1", [publishedQuestionId]),
+      ),
+    ).rejects.toThrow(/permission denied/i);
+  });
+
+  it("computes is_correct server-side, ignoring a client-supplied value", async () => {
+    const wrong = await asUser(userA, (c) =>
+      c.query(
+        `insert into public.attempts (user_id, question_id, chosen_option, is_correct)
+         values ($1, $2, 'A', true) returning is_correct`,
+        [userA, publishedQuestionId],
+      ),
+    );
+    const right = await asUser(userA, (c) =>
+      c.query(
+        `insert into public.attempts (user_id, question_id, chosen_option, is_correct)
+         values ($1, $2, 'B', false) returning is_correct`,
+        [userA, publishedQuestionId],
+      ),
+    );
+    // correct_option is 'B', so the server overrides the lying client values.
+    expect(wrong.rows[0].is_correct).toBe(false);
+    expect(right.rows[0].is_correct).toBe(true);
+  });
+
+  it("students cannot insert content-pipeline jobs", async () => {
+    await expect(
+      asUser(userA, (c) =>
+        c.query("insert into public.content_jobs (job_type) values ('generate_question')"),
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("students cannot bookmark on behalf of another user", async () => {
+    await expect(
+      asUser(userA, (c) =>
+        c.query("insert into public.bookmarks (user_id, question_id) values ($1, $2)", [
+          userB,
+          publishedQuestionId,
+        ]),
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("students see only active learning objectives, not drafts", async () => {
+    const visible = await asUser(userA, (c) =>
+      c.query("select id, status from public.learning_objectives where id = any($1::uuid[])", [
+        [activeObjectiveId, draftObjectiveId],
+      ]),
+    );
+    expect(visible.rows.map((r) => r.id)).toEqual([activeObjectiveId]);
+  });
+
+  it("service_role may update a subscription (the Stripe webhook path)", async () => {
+    const result = await asUser(
+      null,
+      (c) =>
+        c.query(
+          "update public.profiles set subscription_status = 'active' where id = $1 returning subscription_status",
+          [userA],
+        ),
+      "service_role",
+    );
+    expect(result.rows[0].subscription_status).toBe("active");
   });
 });

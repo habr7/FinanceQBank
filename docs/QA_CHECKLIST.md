@@ -36,6 +36,13 @@
 - [x] RLS suite (16 cases): cross-user isolation, draft hiding, privileged-column protection,
       answer-key column protection, server-computed `is_correct`, admin + service_role paths.
 
+## Phase 4 status
+
+- [x] `ai-content` 29 tests: Zod (rejects 2/4 options), deterministic validators, publish gate
+      (rejects failed audit + high IP risk), n-gram IP, and the offline e2e pipeline.
+- [x] CLI verified end-to-end offline: plan → generate (drafts) → audit (audits) →
+      publish (only passing) / quarantine (flawed).
+
 ## Phase 2 status
 
 - [x] `shared` practice logic: difficulty allocation, selection, dashboard-stats aggregation.

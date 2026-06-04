@@ -25,3 +25,31 @@ on conflict (code) do update set
   exam_weight_min = excluded.exam_weight_min,
   exam_weight_max = excluded.exam_weight_max,
   display_order = excluded.display_order;
+
+-- Dummy, founder-authored source material only (no official/copyrighted content).
+insert into public.source_documents (id, title, source_type, source_license)
+values (
+  '00000000-0000-0000-0000-000000000001',
+  'Founder Notes — Core Concepts (dummy, original)',
+  'founder_notes',
+  'internal-original'
+)
+on conflict (id) do nothing;
+
+insert into public.source_chunks (id, source_document_id, topic_code, chunk_text, chunk_hash)
+values
+  (
+    '00000000-0000-0000-0000-000000000011',
+    '00000000-0000-0000-0000-000000000001',
+    'QM',
+    'The time value of money links present and future cash flows through a discount rate.',
+    'dummy-hash-qm-1'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000012',
+    '00000000-0000-0000-0000-000000000001',
+    'FI',
+    'Duration approximates the sensitivity of a bond price to a small change in yield.',
+    'dummy-hash-fi-1'
+  )
+on conflict (id) do nothing;

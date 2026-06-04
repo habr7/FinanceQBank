@@ -112,15 +112,30 @@ Tests: shared 49, web 7, db RLS 19/19; lint/typecheck/build green.
 
 ---
 
-## Phase 4 — AI content pipeline MVP ⬜
+## Phase 4 — AI content pipeline MVP ✅
 
 **Goal:** `packages/ai-content` — Zod schemas, versioned prompts, runner CLI, agents
 (blueprint, generator, independent solver, validator, adversarial reviewer, IP checker),
-publish gate, jobs/audits tables. Dummy author-owned source documents only.
+publish gate. Dummy author-owned source documents only.
 
-**Acceptance:** `content:generate` creates drafts; `content:audit` writes audits;
-`content:publish` publishes only passing questions; failures → quarantine; invalid outputs
-rejected by Zod. Review with `ai-content-pipeline-engineer` + `cfa-domain-reviewer`.
+Delivered:
+
+- Zod schemas (`GeneratedQuestionSchema` etc.) — exactly 3 options, one correct, structural mins.
+- Deterministic validators (§19): three options, single correct, forbidden options, numeric
+  ordering, explanation completeness, official-claim block, markdown math, topic distribution.
+- Versioned `.md` prompts (`v1`) + loader; agent chain over an `LlmClient` abstraction with a
+  deterministic offline **mock** (default; real Anthropic adapter when `ANTHROPIC_API_KEY` set).
+- IP checker via deterministic n-gram (Jaccard) similarity against a dummy author corpus.
+- Publish gate (§9): 3 options, one correct, rationale per option, validator agreement,
+  no critical adversarial, IP < 0.35, no forbidden text, tagged, quality ≥ 85, confidence ≥ 0.85.
+- State machine + `ContentStore` (offline JSON store; Supabase store deferred to Phase 5).
+- CLI + `content:{plan,generate,audit,publish,quarantine}` wired end-to-end.
+- Dummy founder-authored `source_documents`/`source_chunks` added to the DB seed.
+
+**Acceptance:** `content:generate` creates drafts ✅; `content:audit` writes audits ✅;
+`content:publish` publishes only passing (others skipped) ✅; flawed items → quarantine ✅;
+invalid outputs rejected by Zod ✅. Tests: ai-content 29; ran the CLI end-to-end offline.
+Review with `ai-content-pipeline-engineer` + `cfa-domain-reviewer`.
 
 ---
 

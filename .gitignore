@@ -12,6 +12,9 @@ build/
 # turbo
 .turbo/
 
+# local content pipeline store (offline JSON backend)
+.charterbank-content/
+
 # test / coverage
 coverage/
 playwright-report/

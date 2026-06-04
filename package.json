@@ -21,11 +21,11 @@
     "db:migrate": "supabase db push",
     "db:seed": "supabase db reset",
     "db:test": "pnpm --filter @charterbank/db test:db",
-    "content:plan": "echo \"[charterbank] content:plan is implemented in Phase 4\" && exit 0",
-    "content:generate": "echo \"[charterbank] content:generate is implemented in Phase 4\" && exit 0",
-    "content:audit": "echo \"[charterbank] content:audit is implemented in Phase 4\" && exit 0",
-    "content:publish": "echo \"[charterbank] content:publish is implemented in Phase 4\" && exit 0",
-    "content:quarantine": "echo \"[charterbank] content:quarantine is implemented in Phase 4\" && exit 0"
+    "content:plan": "pnpm --filter @charterbank/ai-content exec tsx src/cli.ts plan",
+    "content:generate": "pnpm --filter @charterbank/ai-content exec tsx src/cli.ts generate",
+    "content:audit": "pnpm --filter @charterbank/ai-content exec tsx src/cli.ts audit",
+    "content:publish": "pnpm --filter @charterbank/ai-content exec tsx src/cli.ts publish",
+    "content:quarantine": "pnpm --filter @charterbank/ai-content exec tsx src/cli.ts quarantine"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -11,11 +11,18 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"[@charterbank/db] tests arrive with migrations in Phase 1\" && exit 0",
+    "test": "vitest run",
+    "test:db": "bash scripts/test-rls.sh",
     "build": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/node": "^25.9.1",
+    "@types/pg": "^8.20.0",
     "eslint": "^10.4.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  },
+  "dependencies": {
+    "pg": "^8.21.0"
   }
 }

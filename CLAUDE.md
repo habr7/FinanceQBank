@@ -51,8 +51,11 @@ pnpm test           # vitest (unit/integration)
 pnpm test:e2e       # Playwright (later phase)
 pnpm format         # prettier write
 
+# Database (Phase 1):
+pnpm db:test                                         # boot throwaway Postgres, apply migrations + seed, run RLS suite
+pnpm db:reset | db:migrate | db:seed                 # via Supabase CLI (supabase db reset / push)
+
 # Implemented in later phases (stubbed until then):
-pnpm db:reset | db:migrate | db:seed                 # Phase 1
 pnpm content:plan | content:generate | content:audit # Phase 4
 pnpm content:publish | content:quarantine            # Phase 4
 ```

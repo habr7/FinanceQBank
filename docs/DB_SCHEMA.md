@@ -1,7 +1,9 @@
 # Database Schema (overview)
 
-> Full SQL lands in `packages/db/supabase/migrations` in Phase 1. This is the planned model.
-> The schema supports curriculum versioning, auditing, attempts, review, reports, and subscriptions.
+> Implemented in Phase 1 — full SQL lives in `packages/db/supabase/migrations` (0001–0006),
+> with seed in `supabase/seed/seed.sql` and the RLS test suite under `tests/`
+> (run via `pnpm db:test`). The schema supports curriculum versioning, auditing, attempts,
+> review, reports, and subscriptions.
 
 ## Entities
 

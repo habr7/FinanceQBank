@@ -1,11 +1,14 @@
 /**
  * @charterbank/db
  *
- * Placeholder package. Phase 1 adds Supabase migrations, seed data, generated
- * types, query helpers, and RLS tests under:
- *   supabase/migrations, supabase/seed, src/types.ts, src/queries.ts, src/rls-tests.ts
+ * Phase 1: Supabase migrations, seed, RLS policies, RLS tests, and DB types.
+ * Migrations live in supabase/migrations; the RLS suite runs via
+ * `pnpm --filter @charterbank/db test:db` against a throwaway Postgres cluster.
  *
- * Nothing here touches a database yet — see IMPLEMENTATION_PLAN.md (Phase 1).
+ * This entrypoint exports types only (no runtime/Node-only imports such as `pg`),
+ * so it is safe to consume from the Next.js app via transpilePackages.
  */
 
-export const DB_PACKAGE_READY = false;
+export * from "./types";
+
+export const DB_PACKAGE_READY = true;

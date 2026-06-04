@@ -8,7 +8,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ not started
 
 ---
 
-## Phase 0 — Bootstrap & documentation 🚧
+## Phase 0 — Bootstrap & documentation ✅
 
 **Goal:** monorepo scaffold, tooling, docs, CLAUDE.md, subagents/commands. No DB, no product features.
 
@@ -23,15 +23,15 @@ Scope:
 
 **Acceptance criteria**
 
-- [ ] `pnpm install` works.
-- [ ] `pnpm dev` serves a basic homepage with the legal disclaimer.
-- [ ] `pnpm lint`, `pnpm typecheck`, `pnpm build` pass.
-- [ ] `pnpm test` passes (shared-domain unit tests).
-- [ ] Initial `docs/` created.
+- [x] `pnpm install` works.
+- [x] `pnpm dev` serves a basic homepage with the legal disclaimer.
+- [x] `pnpm lint`, `pnpm typecheck`, `pnpm build` pass.
+- [x] `pnpm test` passes (shared-domain unit tests).
+- [x] Initial `docs/` created.
 
 ---
 
-## Phase 1 — Database, Auth & RLS ⬜
+## Phase 1 — Database, Auth & RLS ✅
 
 **Goal:** Supabase migrations, RLS, auth in the app, topic seed.
 
@@ -41,9 +41,23 @@ Scope: migrations for `profiles`, `curriculum_versions`, `topics`, `learning_obj
 `question_reports`, `spaced_repetition_cards`, `content_jobs`. RLS policies + `is_admin()`
 helper. Supabase auth (Google + magic link) wired into Next.js. Seed of 10 Level I topics.
 
-**Acceptance:** migrations run from zero; RLS blocks cross-user reads & draft questions;
-user logs in and a profile is created; seed creates 10 topics. RLS tests pass.
-Review with `database-rls-architect` before finalizing.
+Delivered:
+
+- `packages/db/supabase/migrations/0001…0006` — extensions, core, content, study tables,
+  functions/triggers (`is_admin()`, `handle_new_user`, `protect_profile_columns`, `set_updated_at`),
+  and RLS grants + policies.
+- `packages/db/supabase/seed/seed.sql` — 10 topics + active 2026 curriculum version.
+- `packages/db/src/types.ts` — hand-authored `Database` types for the typed Supabase client.
+- RLS suite (`tests/rls.test.ts`) run by `pnpm db:test`, which boots a throwaway Postgres
+  cluster, applies the Supabase-compat layer + all migrations + seed from zero, and asserts
+  cross-user isolation, draft hiding, privileged-column protection, and admin access.
+- Next.js auth: `@supabase/ssr` server/browser clients + middleware session refresh,
+  `/login` (magic link + Google), `/auth/callback`, `/auth/signout`, and a protected
+  `/dashboard` reading the profile + topics through RLS.
+
+**Acceptance:** migrations run from zero ✅; RLS blocks cross-user reads & draft questions ✅;
+profile auto-provisioned on signup (trigger) ✅; seed creates 10 topics ✅; RLS tests pass
+(9/9) ✅.
 
 ---
 

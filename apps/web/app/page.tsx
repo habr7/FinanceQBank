@@ -31,7 +31,7 @@ export default function HomePage() {
             <a href="#pricing">Pricing</a>
           </Button>
           <Button size="sm" asChild>
-            <a href="#start">Start free</a>
+            <a href="/login">Start free</a>
           </Button>
         </nav>
       </header>
@@ -46,7 +46,7 @@ export default function HomePage() {
         </p>
         <div id="start" className="flex flex-wrap gap-3">
           <Button size="lg" asChild>
-            <a href="#start">Start free — no card required</a>
+            <a href="/login">Start free — no card required</a>
           </Button>
           <Button size="lg" variant="outline" asChild>
             <a href="#pricing">See pricing</a>

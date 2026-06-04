@@ -11,8 +11,11 @@
     "test": "echo \"[@charterbank/web] component/e2e tests arrive in Phase 2\" && exit 0"
   },
   "dependencies": {
+    "@charterbank/db": "workspace:*",
     "@charterbank/shared": "workspace:*",
     "@radix-ui/react-slot": "^1.2.4",
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.107.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.17.0",

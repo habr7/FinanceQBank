@@ -36,5 +36,6 @@ pnpm-debug.log*
 .vscode/*
 !.vscode/extensions.json
 
-# claude local settings
+# claude local settings + agent worktrees
 .claude/settings.local.json
+.claude/worktrees/

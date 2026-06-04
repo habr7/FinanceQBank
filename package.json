@@ -1,0 +1,41 @@
+{
+  "name": "charterbank",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Independent, affordable CFA Level I Q-Bank SaaS with AI-assisted batch content generation.",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "echo \"[charterbank] e2e tests arrive in a later phase\" && exit 0",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,md,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,md,css}\"",
+    "db:reset": "echo \"[charterbank] db:reset is implemented in Phase 1\" && exit 0",
+    "db:migrate": "echo \"[charterbank] db:migrate is implemented in Phase 1\" && exit 0",
+    "db:seed": "echo \"[charterbank] db:seed is implemented in Phase 1\" && exit 0",
+    "content:plan": "echo \"[charterbank] content:plan is implemented in Phase 4\" && exit 0",
+    "content:generate": "echo \"[charterbank] content:generate is implemented in Phase 4\" && exit 0",
+    "content:audit": "echo \"[charterbank] content:audit is implemented in Phase 4\" && exit 0",
+    "content:publish": "echo \"[charterbank] content:publish is implemented in Phase 4\" && exit 0",
+    "content:quarantine": "echo \"[charterbank] content:quarantine is implemented in Phase 4\" && exit 0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@next/eslint-plugin-next": "^16.2.7",
+    "eslint": "^10.4.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.6.0",
+    "prettier": "^3.8.3",
+    "turbo": "^2.9.16",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.1",
+    "vitest": "^4.1.8"
+  }
+}

@@ -19,6 +19,7 @@ describeDb("Row Level Security", () => {
   let draftQuestionId = "";
   let activeObjectiveId = "";
   let draftObjectiveId = "";
+  let sessionAId = "";
 
   /** Run `fn` inside a transaction acting as a given role, always rolling back. */
   async function asUser<T>(
@@ -104,6 +105,14 @@ describeDb("Row Level Security", () => {
          values ($1, $2, 'typo', 'typo in stem')`,
         [userB, publishedQuestionId],
       );
+
+      sessionAId = (
+        await admin.query(
+          `insert into public.practice_sessions (user_id, mode, total_questions, question_ids)
+           values ($1, 'practice', 1, $2) returning id`,
+          [userA, [publishedQuestionId]],
+        )
+      ).rows[0].id as string;
     } finally {
       admin.release();
     }
@@ -256,6 +265,18 @@ describeDb("Row Level Security", () => {
       ]),
     );
     expect(visible.rows.map((r) => r.id)).toEqual([activeObjectiveId]);
+  });
+
+  it("owns its practice session (question_ids round-trip) and hides it from others", async () => {
+    const own = await asUser(userA, (c) =>
+      c.query("select question_ids from public.practice_sessions where id = $1", [sessionAId]),
+    );
+    expect(own.rows[0].question_ids).toEqual([publishedQuestionId]);
+
+    const other = await asUser(userB, (c) =>
+      c.query("select id from public.practice_sessions where id = $1", [sessionAId]),
+    );
+    expect(other.rowCount).toBe(0);
   });
 
   it("service_role may update a subscription (the Stripe webhook path)", async () => {

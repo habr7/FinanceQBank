@@ -109,6 +109,35 @@ export type AttemptRow = {
   answered_at: string;
 };
 
+export type PracticeSessionRow = {
+  id: string;
+  user_id: string;
+  mode: SessionMode;
+  topic_filter: string[] | null;
+  difficulty_filter: string[] | null;
+  total_questions: number;
+  time_limit_seconds: number | null;
+  question_ids: string[];
+  started_at: string;
+  completed_at: string | null;
+  created_at: string;
+};
+
+export type BookmarkRow = {
+  user_id: string;
+  question_id: string;
+  created_at: string;
+};
+
+export type UserQuestionNoteRow = {
+  id: string;
+  user_id: string;
+  question_id: string;
+  note_md: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type QuestionReportRow = {
   id: string;
   user_id: string | null;
@@ -152,6 +181,9 @@ export type Database = {
       >;
       question_options: TableShape<QuestionOptionRow, "question_id" | "label" | "option_text">;
       attempts: TableShape<AttemptRow, "user_id" | "question_id" | "is_correct">;
+      practice_sessions: TableShape<PracticeSessionRow, "user_id" | "mode" | "total_questions">;
+      bookmarks: TableShape<BookmarkRow, "user_id" | "question_id">;
+      user_question_notes: TableShape<UserQuestionNoteRow, "user_id" | "question_id" | "note_md">;
       question_reports: TableShape<QuestionReportRow, "question_id" | "report_type">;
     };
     Views: EmptyMap;

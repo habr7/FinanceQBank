@@ -30,4 +30,16 @@
 - [x] `packages/shared` unit tests: topic weights, target allocation, mock allocation, free limit.
 - [x] `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` green.
 
+## Phase 1 status
+
+- [x] Migrations apply from zero; seed creates 10 topics (`pnpm db:test`).
+- [x] RLS suite (16 cases): cross-user isolation, draft hiding, privileged-column protection,
+      answer-key column protection, server-computed `is_correct`, admin + service_role paths.
+
+## Phase 2 status
+
+- [x] `shared` practice logic: difficulty allocation, selection, dashboard-stats aggregation.
+- [x] Answer submission graded server-side; `correct_option`/explanation never sent pre-submit.
+- [x] Dashboard per-topic accuracy + weak-topic flagging; bookmark / note / report wired.
+
 > Run after every phase: `pnpm lint && pnpm typecheck && pnpm test && pnpm build`.

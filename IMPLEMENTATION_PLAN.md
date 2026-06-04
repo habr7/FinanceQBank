@@ -61,13 +61,31 @@ profile auto-provisioned on signup (trigger) ✅; seed creates 10 topics ✅; RL
 
 ---
 
-## Phase 2 — Study UI MVP ⬜
+## Phase 2 — Study UI MVP ✅
 
 **Goal:** dashboard, practice mode, question card, answer submission, post-answer explanation,
 bookmarks, notes, report issue.
 
-**Acceptance:** user answers a published question; attempt saved; dashboard shows per-topic
-accuracy; user reports an issue; basic tests pass. Use `frontend-ux-engineer` + `qa-test-engineer`.
+Delivered:
+
+- `packages/shared/practice.ts` — pure, tested domain logic: `allocateDifficulty` (30/50/20),
+  `selectPracticeQuestions` (difficulty mix + shortfall fill), `computeDashboardStats`
+  (overall + per-topic accuracy, avg time, weak-topic flagging).
+- `apps/web/lib/data/*` — server-only data layer: dashboard stats, practice session creation +
+  runner load, `submitAnswer` (insert under RLS → DB trigger grades; service-role read reveals
+  the answer key + explanation only AFTER submit), and engagement (bookmark/note/report).
+- Server actions (`app/practice/actions.ts`) + UI: enhanced `/dashboard` (per-topic accuracy,
+  weak topics, totals), `/practice` (start form), `/practice/[sessionId]` runner with a
+  keyboard-driven question card (A/B/C, Enter, N, M), post-answer explanation + rationales,
+  bookmark, note, and report-issue.
+- Migration `0007` adds `practice_sessions.question_ids` (resumable, deterministic runner).
+
+**Acceptance:** user answers a published question (graded server-side) ✅; attempt saved with
+server-computed `is_correct` ✅; dashboard shows per-topic accuracy ✅; user can report an issue,
+bookmark, and note ✅; tests pass — shared 42, db RLS 16/16, lint/typecheck/build green ✅.
+
+> Note: the answer key (`correct_option`) and explanation are never sent to the client before
+> submission, consistent with the Phase 1 column-level grant + the security rules in CLAUDE.md.
 
 ---
 

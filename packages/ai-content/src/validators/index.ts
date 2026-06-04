@@ -1,6 +1,7 @@
 import {
   FORBIDDEN_MARKETING_CLAIMS,
   FORBIDDEN_OPTION_PATTERNS,
+  QUALIFIERS,
   TOPIC_CODES,
   allocateQuestions,
   type TopicCode,
@@ -19,6 +20,24 @@ export interface ValidatableQuestion {
   options: ValidatableOption[];
   correct_option: "A" | "B" | "C";
   explanation_md: string;
+  vignette?: string | null;
+  formula_md?: string | null;
+  calculator_hint_md?: string | null;
+  common_trap_md?: string | null;
+  question_type?: string;
+}
+
+/** Every free-text surface of a question, for compliance/IP scanning. */
+function allText(q: ValidatableQuestion): string {
+  return [
+    q.stem,
+    q.vignette ?? "",
+    q.explanation_md,
+    q.formula_md ?? "",
+    q.calculator_hint_md ?? "",
+    q.common_trap_md ?? "",
+    ...q.options.flatMap((o) => [o.text, o.rationale ?? ""]),
+  ].join("\n");
 }
 
 export interface ValidationIssue {
@@ -59,14 +78,29 @@ export function validateSingleCorrectAnswer(q: ValidatableQuestion): ValidationR
 export function validateForbiddenOptionText(q: ValidatableQuestion): ValidationResult {
   const issues: ValidationIssue[] = [];
   for (const option of q.options) {
+    const text = `${option.text}\n${option.rationale ?? ""}`;
     for (const pattern of FORBIDDEN_OPTION_PATTERNS) {
-      if (pattern.test(option.text)) {
+      if (pattern.test(text)) {
         issues.push({
           code: "forbidden_option",
           message: `Option ${option.label} contains forbidden text matching ${pattern}.`,
         });
       }
     }
+  }
+  return { ok: issues.length === 0, issues };
+}
+
+/** Discouraged stem phrasings (PROJECT_BRIEF §2): except / true-false / emphatic NOT. */
+export function validateStemPhrasing(q: ValidatableQuestion): ValidationResult {
+  const issues: ValidationIssue[] = [];
+  const checks: { pattern: RegExp; message: string }[] = [
+    { pattern: /\bexcept\b/i, message: "Stem uses 'except'." },
+    { pattern: /\btrue or false\b/i, message: "Stem uses a true/false framing." },
+    { pattern: /\bNOT\b/, message: "Stem uses an emphatic 'NOT'." },
+  ];
+  for (const { pattern, message } of checks) {
+    if (pattern.test(q.stem)) issues.push({ code: "stem_phrasing", message });
   }
   return { ok: issues.length === 0, issues };
 }
@@ -116,7 +150,7 @@ export function validateExplanationCompleteness(q: ValidatableQuestion): Validat
 }
 
 export function validateNoOfficialClaims(q: ValidatableQuestion): ValidationResult {
-  const haystack = [q.stem, q.explanation_md, ...q.options.map((o) => o.text)].join("\n");
+  const haystack = allText(q);
   for (const pattern of FORBIDDEN_MARKETING_CLAIMS) {
     if (pattern.test(haystack)) {
       return fail(
@@ -126,6 +160,19 @@ export function validateNoOfficialClaims(q: ValidatableQuestion): ValidationResu
     }
   }
   return ok();
+}
+
+/**
+ * Warning-level: conceptual items should use a CFA-style qualifier. Not part of
+ * the hard gate — used to route un-qualified items to human review.
+ */
+export function validateQualifierPresence(q: ValidatableQuestion): ValidationResult {
+  if (q.question_type === "calculation") return ok();
+  const stem = q.stem.toLowerCase();
+  const hasQualifier = QUALIFIERS.some((qualifier) => stem.includes(qualifier));
+  return hasQualifier
+    ? ok()
+    : fail("missing_qualifier", "Conceptual stem lacks a CFA-style qualifier.");
 }
 
 export function validateMarkdownMath(q: ValidatableQuestion): ValidationResult {
@@ -143,6 +190,7 @@ export function runDeterministicValidators(q: ValidatableQuestion): ValidationRe
     validateThreeOptions(q),
     validateSingleCorrectAnswer(q),
     validateForbiddenOptionText(q),
+    validateStemPhrasing(q),
     validateNumericalOrdering(q),
     validateExplanationCompleteness(q),
     validateNoOfficialClaims(q),

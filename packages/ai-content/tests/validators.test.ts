@@ -6,6 +6,7 @@ import {
   validateNumericalOrdering,
   validateMarkdownMath,
   validateSingleCorrectAnswer,
+  validateStemPhrasing,
   validateThreeOptions,
   validateTopicWeightDistribution,
   type ValidatableQuestion,
@@ -69,8 +70,23 @@ describe("deterministic validators", () => {
     expect(validateNumericalOrdering(bad).ok).toBe(false);
   });
 
-  it("flags official-sounding claims", () => {
+  it("flags official-sounding claims, including in option rationales", () => {
     expect(validateNoOfficialClaims(q({ stem: "These are real exam questions." })).ok).toBe(false);
+    const inRationale = q();
+    inRationale.options[0] = {
+      label: "A",
+      text: "USD 1,200.00",
+      rationale: "As seen in the actual exam, this understates the value.",
+    };
+    expect(validateNoOfficialClaims(inRationale).ok).toBe(false);
+  });
+
+  it("flags discouraged stem phrasings (except / NOT / true-false)", () => {
+    expect(validateStemPhrasing(q({ stem: "All of the following are true EXCEPT:" })).ok).toBe(
+      false,
+    );
+    expect(validateStemPhrasing(q({ stem: "Which statement is NOT correct?" })).ok).toBe(false);
+    expect(validateStemPhrasing(q()).ok).toBe(true);
   });
 
   it("flags unbalanced math delimiters", () => {

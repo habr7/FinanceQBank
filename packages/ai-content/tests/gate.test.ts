@@ -37,6 +37,7 @@ function input(overrides: Partial<GateInput> = {}): GateInput {
     aiConfidence: 0.95,
     ipRiskScore: 0.05,
     validator: { result: "pass", finalCorrectOption: "B" },
+    solver: { answer: "B", ambiguities: 0 },
     adversarialSeverity: "none",
     ...overrides,
   };
@@ -61,6 +62,30 @@ describe("evaluatePublishGate", () => {
     );
     expect(decision.pass).toBe(false);
     expect(decision.reasons).toContain("validator_disagrees_on_answer");
+  });
+
+  it("rejects a 'corrected' validator result (correction not auto-applied)", () => {
+    const decision = evaluatePublishGate(
+      input({ validator: { result: "corrected", finalCorrectOption: "B" } }),
+    );
+    expect(decision.pass).toBe(false);
+    expect(decision.reasons).toContain("validator_corrected_needs_human");
+  });
+
+  it("rejects when the independent solver disagrees with the key", () => {
+    const decision = evaluatePublishGate(input({ solver: { answer: "A", ambiguities: 0 } }));
+    expect(decision.pass).toBe(false);
+    expect(decision.reasons).toContain("solver_disagrees_on_answer");
+  });
+
+  it("rejects when the solver flags ambiguity", () => {
+    const decision = evaluatePublishGate(input({ solver: { answer: "B", ambiguities: 1 } }));
+    expect(decision.pass).toBe(false);
+    expect(decision.reasons).toContain("solver_flagged_ambiguity");
+  });
+
+  it("fails closed on a missing IP score", () => {
+    expect(evaluatePublishGate(input({ ipRiskScore: Number.NaN })).pass).toBe(false);
   });
 
   it("rejects a critical adversarial finding", () => {

@@ -8,6 +8,8 @@ insert into public.curriculum_versions (year, level, is_active, notes)
 values (2026, 'I', true, 'Initial active Level I curriculum version.')
 on conflict (year, level) do update set notes = excluded.notes;
 
+-- Topic weight ranges below are our own published estimates of the Level I bands,
+-- not an official CFA Institute data feed.
 insert into public.topics (code, name, exam_weight_min, exam_weight_max, display_order)
 values
   ('ETH', 'Ethical and Professional Standards', 15, 20, 1),

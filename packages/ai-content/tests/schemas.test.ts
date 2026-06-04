@@ -64,6 +64,16 @@ describe("GeneratedQuestionSchema", () => {
     ).toBe(false);
   });
 
+  it("rejects duplicate option labels", () => {
+    const q = validQuestion();
+    q.options[1] = {
+      label: "A",
+      text: "USD 1,250.00",
+      rationale: "duplicate label A is not allowed",
+    };
+    expect(GeneratedQuestionSchema.safeParse(q).success).toBe(false);
+  });
+
   it("rejects an unknown topic code", () => {
     expect(
       GeneratedQuestionSchema.safeParse({ ...validQuestion(), topic_code: "NOPE" }).success,

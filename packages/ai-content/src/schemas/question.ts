@@ -37,7 +37,12 @@ export const GeneratedQuestionSchema = z.object({
   question_type: QuestionTypeSchema,
   stem: z.string().min(40),
   vignette: z.string().optional().nullable(),
-  options: z.array(GeneratedOptionSchema).length(3),
+  options: z
+    .array(GeneratedOptionSchema)
+    .length(3)
+    .refine((opts) => new Set(opts.map((o) => o.label)).size === 3, {
+      message: "Options must have distinct labels A, B, and C.",
+    }),
   correct_option: OptionLabelSchema,
   explanation_md: z.string().min(100),
   formula_md: z.string().optional().nullable(),

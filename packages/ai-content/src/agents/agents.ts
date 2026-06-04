@@ -13,6 +13,7 @@ import {
   type ValidatorOutput,
 } from "../schemas";
 import { getPrompt } from "../prompts";
+import { IP_RISK_THRESHOLD } from "../gates";
 import { ipRisk } from "../utils/ngram";
 import type { LlmClient, LlmResult } from "./types";
 
@@ -123,6 +124,7 @@ export function runIpCheck(question: GeneratedQuestion, corpus: readonly string[
   const score = ipRisk(text, corpus);
   return {
     risk_score: Number(score.toFixed(4)),
-    reasons: score >= 0.35 ? ["High n-gram overlap with a source/forbidden document."] : [],
+    reasons:
+      score >= IP_RISK_THRESHOLD ? ["High n-gram overlap with a source/forbidden document."] : [],
   };
 }

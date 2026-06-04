@@ -1,5 +1,5 @@
 import { runAdversarial, runIpCheck, runSolver, runValidator } from "../agents";
-import { evaluatePublishGate, type PublishDecision } from "../gates";
+import { evaluatePublishGate, IP_RISK_THRESHOLD, type PublishDecision } from "../gates";
 import { runDeterministicValidators, validateMarkdownMath } from "../validators";
 import type { AdversarialOutput, ValidatorOutput } from "../schemas";
 import type { AuditResult, StoredAudit } from "../store/types";
@@ -89,11 +89,11 @@ export async function auditBatch(ctx: PipelineContext, batchId: string): Promise
       severity: adversarial.data.severity,
       findings: adversarial.data.findings,
     });
-    await saveAudit("ip_check", ip.risk_score >= 0.35 ? "fail" : "pass", {
+    await saveAudit("ip_check", ip.risk_score >= IP_RISK_THRESHOLD ? "fail" : "pass", {
       risk_score: ip.risk_score,
       reasons: ip.reasons,
     });
-    await saveAudit("math_check", math.ok ? "pass" : "fail", { issues: deterministic.issues });
+    await saveAudit("math_check", math.ok ? "pass" : "fail", { issues: math.issues });
 
     const qualityScore = computeQualityScore(
       deterministic.issues.length,
@@ -110,6 +110,10 @@ export async function auditBatch(ctx: PipelineContext, batchId: string): Promise
       validator: {
         result: validator.data.result,
         finalCorrectOption: validator.data.final_correct_option,
+      },
+      solver: {
+        answer: solver.data.independent_answer,
+        ambiguities: solver.data.potential_ambiguities.length,
       },
       adversarialSeverity: adversarial.data.severity,
     });

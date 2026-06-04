@@ -13,6 +13,11 @@ export interface GateInput {
     result: "pass" | "warning" | "fail" | "corrected";
     finalCorrectOption: "A" | "B" | "C";
   };
+  /** Independent solver cross-check (PROJECT_BRIEF §10.5). */
+  solver: {
+    answer: "A" | "B" | "C";
+    ambiguities: number;
+  };
   adversarialSeverity: "none" | "minor" | "major" | "critical";
 }
 
@@ -39,16 +44,30 @@ export function evaluatePublishGate(input: GateInput): PublishDecision {
   if (input.validator.result === "fail") {
     reasons.push("validator_failed");
   }
+  // A "corrected" result means the validator changed the item; the correction is not
+  // auto-applied in the MVP, so the original is never publishable — it needs a human.
+  if (input.validator.result === "corrected") {
+    reasons.push("validator_corrected_needs_human");
+  }
   if (input.validator.finalCorrectOption !== input.question.correct_option) {
     reasons.push("validator_disagrees_on_answer");
+  }
+
+  // Independent solver must agree with the keyed answer and find no ambiguity.
+  if (input.solver.answer !== input.question.correct_option) {
+    reasons.push("solver_disagrees_on_answer");
+  }
+  if (input.solver.ambiguities > 0) {
+    reasons.push("solver_flagged_ambiguity");
   }
 
   if (input.adversarialSeverity === "critical") {
     reasons.push("adversarial_critical");
   }
 
-  if (input.ipRiskScore >= IP_RISK_THRESHOLD) {
-    reasons.push(`ip_risk_too_high:${input.ipRiskScore.toFixed(2)}`);
+  // Fail closed: a missing/NaN IP score is treated as a gate failure, not a pass.
+  if (!Number.isFinite(input.ipRiskScore) || input.ipRiskScore >= IP_RISK_THRESHOLD) {
+    reasons.push(`ip_risk_too_high:${Number(input.ipRiskScore).toFixed(2)}`);
   }
 
   if (input.qualityScore < MIN_QUALITY_SCORE) {

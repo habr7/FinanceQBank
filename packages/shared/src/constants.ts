@@ -11,12 +11,37 @@ export const LEGAL_DISCLAIMER =
 export const FORBIDDEN_OPTION_PATTERNS: readonly RegExp[] = [
   /all of the above/i,
   /none of the above/i,
+  /any of the above/i,
+  /all of these/i,
+  /none of these/i,
   /a and b only/i,
   /b and c only/i,
   /a and c only/i,
+  /both a and b/i,
+  /both b and c/i,
+  /both a and c/i,
+  /either a or b/i,
+  /either b or c/i,
+  /\bi and ii only\b/i,
+  /\bii and iii only\b/i,
+  /\bi,? ii,? and iii\b/i,
   /cannot determine/i,
   /cannot calculate/i,
+  /cannot be determined/i,
   /not enough information/i,
+  /insufficient information/i,
+];
+
+/** CFA-style answer qualifiers we prefer (used to route un-qualified items to review). */
+export const QUALIFIERS: readonly string[] = [
+  "most likely",
+  "least likely",
+  "best described",
+  "most appropriate",
+  "least appropriate",
+  "most accurate",
+  "least accurate",
+  "best estimate",
 ];
 
 /** Marketing/compliance claims that must never appear in product or content copy. */

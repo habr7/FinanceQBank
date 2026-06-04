@@ -46,3 +46,15 @@ third-party copyrighted questions, exam dumps or leaked content.
 
 `official CFA`, `CFA Institute approved`, `guaranteed pass`, `real exam questions`,
 `actual exam`, `same authors`. These are blocked by deterministic validators in `packages/ai-content`.
+
+## IP-risk check — scope and limits
+
+The automated IP check (`packages/ai-content`) computes an n-gram **overlap coefficient**
+of each generated item against an internal, founder-authored reference corpus. This is a
+**self-plagiarism / echo** check: it detects when a generated item reproduces our own seed
+material. It does **not**, and legally cannot, compare against official CFA Institute
+curriculum/EOC/mock text (we never ingest that material). It also does not detect semantic
+paraphrase. Therefore the automated score is a guardrail only — **human review remains the
+primary control** against reproducing official content, and the first 500 published items
+require human review regardless of the automated score. The gate fails closed if the IP
+score is missing.

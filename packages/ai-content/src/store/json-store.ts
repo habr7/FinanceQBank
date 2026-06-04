@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
 import { newId } from "../utils/id";
@@ -21,12 +21,20 @@ export class JsonContentStore implements ContentStore {
 
   private read(): StoreData {
     if (!existsSync(this.file)) return structuredClone(EMPTY);
-    return JSON.parse(readFileSync(this.file, "utf8")) as StoreData;
+    try {
+      return JSON.parse(readFileSync(this.file, "utf8")) as StoreData;
+    } catch (error) {
+      throw new Error(`Corrupt content store at ${this.file}`, { cause: error });
+    }
   }
 
+  // Single-writer assumption (CLI / sequential runners). Writes atomically via a
+  // temp file + rename so a crash mid-write cannot corrupt the store.
   private write(data: StoreData): void {
     mkdirSync(dirname(this.file), { recursive: true });
-    writeFileSync(this.file, `${JSON.stringify(data, null, 2)}\n`);
+    const tmp = `${this.file}.${process.pid}.tmp`;
+    writeFileSync(tmp, `${JSON.stringify(data, null, 2)}\n`);
+    renameSync(tmp, this.file);
   }
 
   async createBatch(meta: BatchMeta): Promise<string> {

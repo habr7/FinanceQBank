@@ -13,6 +13,7 @@ Critical requirements:
 - Prefer CFA-like qualifiers where appropriate: most likely, least likely, best described, most appropriate, most accurate, least appropriate, least accurate.
 - Distractors must be plausible and based on common candidate mistakes.
 - If options are numerical, order them from smallest to largest.
+- If options are textual, prefer ordering them from shortest to longest, unless that creates an obvious pattern.
 - Explanation must justify the correct answer and explain why the other two options are wrong.
 - Use Markdown for formulas and explanations.
 

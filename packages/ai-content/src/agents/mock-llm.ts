@@ -105,8 +105,9 @@ function buildQuestion(blueprint: BlueprintInput): unknown {
       }
     : {
         label: "C",
-        text: "USD 1,300.00",
-        rationale: "Overstates the value by double counting the adjustment term.",
+        text: "USD 1,562.50",
+        rationale:
+          "Applies the 25% adjustment twice (1,000 x 1.25 x 1.25), a double-counting error.",
       };
 
   return {
@@ -116,29 +117,29 @@ function buildQuestion(blueprint: BlueprintInput): unknown {
     difficulty: blueprint.difficulty ?? "medium",
     cognitive_level: "application",
     question_type: blueprint.question_type ?? "calculation",
-    stem: "A junior analyst computes the adjusted value of a position from the provided inputs. Which value is most accurate?",
+    stem: "A position has a base value of USD 1,000 and a one-time 25% upward adjustment. Using value = base times one plus the adjustment, which adjusted value is most accurate?",
     vignette: null,
     options: [
       {
         label: "A",
-        text: "USD 1,200.00",
-        rationale:
-          "Understates the value by ignoring the adjustment term, a common candidate slip.",
+        text: "USD 1,000.00",
+        rationale: "Omits the 25% adjustment, leaving the unadjusted base value.",
       },
       {
         label: "B",
         text: "USD 1,250.00",
-        rationale: "Correctly applies the standard formula including the adjustment term.",
+        rationale: "Applies the 25% adjustment once: 1,000 x 1.25 = 1,250, the correct value.",
       },
       optionC,
     ],
     correct_option: "B",
     explanation_md:
-      "The adjusted value equals the base multiplied by one plus the adjustment. Option B applies this correctly. " +
-      "Option A omits the adjustment entirely, and option C applies it twice, both of which are common candidate errors.",
+      "Applying value = base times one plus the adjustment gives 1,000 x 1.25 = 1,250, so option B is correct. " +
+      "Option A of 1,000 omits the adjustment entirely, while option C of 1,562.50 applies the 25% twice " +
+      "(1,000 x 1.25 x 1.25), a common double-counting error.",
     formula_md: "value = base \\times (1 + adjustment)",
     calculator_hint_md: null,
-    common_trap_md: "Watch the sign and magnitude of the adjustment term.",
+    common_trap_md: "Apply the adjustment exactly once; do not compound it.",
     quality_self_check: {
       single_best_answer: true,
       no_forbidden_options: !flawed,

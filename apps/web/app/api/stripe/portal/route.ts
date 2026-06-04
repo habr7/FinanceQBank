@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createStripeClient } from "@/lib/stripe/server";
+import { getAppOrigin } from "@/lib/stripe/config";
 
 export const runtime = "nodejs";
 
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
 
   const session = await stripe.billingPortal.sessions.create({
     customer: profile.stripe_customer_id,
-    return_url: `${request.nextUrl.origin}/dashboard`,
+    return_url: `${getAppOrigin(request.nextUrl.origin)}/dashboard`,
   });
 
   return NextResponse.redirect(session.url, { status: 303 });

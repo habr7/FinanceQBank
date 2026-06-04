@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createStripeClient } from "@/lib/stripe/server";
-import { getPriceId, isBillingPlan } from "@/lib/stripe/config";
+import { getAppOrigin, getPriceId, isBillingPlan } from "@/lib/stripe/config";
 
 export const runtime = "nodejs";
 
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     .eq("id", user.id)
     .single();
 
-  const origin = request.nextUrl.origin;
+  const origin = getAppOrigin(request.nextUrl.origin);
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     line_items: [{ price: priceId, quantity: 1 }],

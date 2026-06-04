@@ -37,9 +37,10 @@ export function computeProfilePatchFromEvent(event: Stripe.Event): ProfileBillin
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       const userId = session.client_reference_id ?? session.metadata?.userId ?? undefined;
-      const customer = customerId(session.customer);
-      if (!userId && !customer) return null;
-      return { userId: userId ?? undefined, stripeCustomerId: customer };
+      // Require a userId anchor — never link a customer to a profile by customer id
+      // alone (avoids updating the wrong profile from a crafted/replayed event).
+      if (!userId) return null;
+      return { userId, stripeCustomerId: customerId(session.customer) };
     }
     case "customer.subscription.created":
     case "customer.subscription.updated":

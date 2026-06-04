@@ -89,13 +89,26 @@ bookmark, and note ✅; tests pass — shared 42, db RLS 16/16, lint/typecheck/b
 
 ---
 
-## Phase 3 — Stripe & entitlements ⬜
+## Phase 3 — Stripe & entitlements ✅
 
 **Goal:** monthly/annual checkout, customer portal, signed webhook, free-vs-paid gating
 (free = 20 questions; active = unlimited).
 
-**Acceptance:** webhook verifies signature; free user blocked after 20 questions; active user
-gets full access; no secrets in client bundle. Review with `security-billing-engineer`.
+Delivered:
+
+- `shared/billing.ts` (pure, tested): `mapStripeSubscriptionStatus`, `getEntitlement`.
+- Server-only Stripe client/config; `/api/stripe/checkout`, `/portal`, `/webhook`.
+- Pure webhook module (signature verify + event→profile patch) with a real Stripe-signed test.
+- Entitlement enforced in `startPracticeSession` (paywall + free-session cap) **and** re-checked
+  in `submitAnswer` (with session-membership check) so the cap can't be bypassed.
+- Webhook hardening (post `security-billing-engineer` review): idempotency log
+  (`stripe_events`, migration `0008`), DB-error surfacing (Stripe retries), require a userId
+  anchor for `checkout.session.completed`, unique `profiles.stripe_customer_id`,
+  canonical redirect origin from `NEXT_PUBLIC_APP_URL`.
+
+**Acceptance:** webhook verifies signature ✅; free user blocked after 20 questions (session +
+answer-time) ✅; active user unlimited ✅; no secrets in client bundle (server-only) ✅.
+Tests: shared 49, web 7, db RLS 19/19; lint/typecheck/build green.
 
 ---
 

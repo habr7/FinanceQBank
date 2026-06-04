@@ -4,6 +4,7 @@ import { APP_NAME, LEGAL_DISCLAIMER } from "@charterbank/shared";
 
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/supabase/server";
+import { isBillingConfigured } from "@/lib/stripe/server";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,7 @@ export default async function UpgradePage({
   if (!user) redirect("/login");
 
   const { checkout } = await searchParams;
-  const billingConfigured = Boolean(process.env.STRIPE_SECRET_KEY);
+  const billingConfigured = isBillingConfigured();
 
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-8 px-6 py-12">

@@ -279,6 +279,46 @@ describeDb("Row Level Security", () => {
     expect(other.rowCount).toBe(0);
   });
 
+  it("hides the stripe_events idempotency log from students", async () => {
+    await expect(
+      asUser(userA, (c) => c.query("select id from public.stripe_events")),
+    ).rejects.toThrow();
+  });
+
+  it("rejects a duplicate stripe event id (webhook idempotency)", async () => {
+    const client = await pool.connect();
+    try {
+      await client.query("begin");
+      await client.query("insert into public.stripe_events (id, type) values ('evt_dup', 'x')");
+      await expect(
+        client.query("insert into public.stripe_events (id, type) values ('evt_dup', 'x')"),
+      ).rejects.toThrow();
+    } finally {
+      await client.query("rollback").catch(() => undefined);
+      client.release();
+    }
+  });
+
+  it("enforces a unique stripe_customer_id across profiles", async () => {
+    const client = await pool.connect();
+    try {
+      await client.query("begin");
+      await client.query("set local role service_role");
+      await client.query(
+        "update public.profiles set stripe_customer_id = 'cus_dup' where id = $1",
+        [userA],
+      );
+      await expect(
+        client.query("update public.profiles set stripe_customer_id = 'cus_dup' where id = $1", [
+          userB,
+        ]),
+      ).rejects.toThrow();
+    } finally {
+      await client.query("rollback").catch(() => undefined);
+      client.release();
+    }
+  });
+
   it("service_role may update a subscription (the Stripe webhook path)", async () => {
     const result = await asUser(
       null,

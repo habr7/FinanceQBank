@@ -11,3 +11,8 @@ export function createStripeClient(): Stripe | null {
   if (!key) return null;
   return new Stripe(key, { typescript: true });
 }
+
+/** Whether billing is configured, without exposing the secret to callers. */
+export function isBillingConfigured(): boolean {
+  return Boolean(process.env.STRIPE_SECRET_KEY);
+}

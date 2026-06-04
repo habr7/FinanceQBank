@@ -138,6 +138,12 @@ export type UserQuestionNoteRow = {
   updated_at: string;
 };
 
+export type StripeEventRow = {
+  id: string;
+  type: string;
+  received_at: string;
+};
+
 export type QuestionReportRow = {
   id: string;
   user_id: string | null;
@@ -185,6 +191,7 @@ export type Database = {
       bookmarks: TableShape<BookmarkRow, "user_id" | "question_id">;
       user_question_notes: TableShape<UserQuestionNoteRow, "user_id" | "question_id" | "note_md">;
       question_reports: TableShape<QuestionReportRow, "question_id" | "report_type">;
+      stripe_events: TableShape<StripeEventRow, "id" | "type">;
     };
     Views: EmptyMap;
     Functions: EmptyMap;

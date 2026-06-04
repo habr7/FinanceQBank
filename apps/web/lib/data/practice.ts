@@ -132,10 +132,17 @@ export async function getPracticeRunnerData(sessionId: string): Promise<Practice
   const supabase = await createSupabaseServerClient();
   if (!supabase) return null;
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  // RLS already restricts to the owner; the explicit user_id filter is defense-in-depth.
   const { data: session } = await supabase
     .from("practice_sessions")
     .select("id, question_ids")
     .eq("id", sessionId)
+    .eq("user_id", user.id)
     .single();
   if (!session) return null;
 
@@ -205,6 +212,30 @@ export async function submitAnswer(input: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
+
+  // The question must belong to a session owned by this user (RLS-scoped read).
+  const { data: session } = await supabase
+    .from("practice_sessions")
+    .select("question_ids")
+    .eq("id", input.sessionId)
+    .eq("user_id", user.id)
+    .single();
+  if (!session || !session.question_ids.includes(input.questionId)) return null;
+
+  // Re-check entitlement at answer time so the per-session cap can't be bypassed
+  // (e.g. by replaying an old session id after exhausting the free allowance).
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("subscription_status")
+    .eq("id", user.id)
+    .single();
+  const { data: prior } = await supabase
+    .from("attempts")
+    .select("question_id")
+    .eq("user_id", user.id);
+  const answeredIds = new Set((prior ?? []).map((a) => a.question_id));
+  const entitlement = getEntitlement(profile?.subscription_status ?? "free", answeredIds.size);
+  if (!entitlement.canAnswer && !answeredIds.has(input.questionId)) return null;
 
   const { data: attempt, error } = await supabase
     .from("attempts")

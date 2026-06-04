@@ -33,25 +33,37 @@ export async function POST(request: Request) {
     return new Response("Invalid signature", { status: 400 });
   }
 
+  const admin = createSupabaseAdminClient();
+  if (!admin) return new Response("Storage not configured", { status: 503 });
+
+  // Idempotency: record the event id first; a duplicate (unique violation) is a no-op.
+  const { error: logError } = await admin
+    .from("stripe_events")
+    .insert({ id: event.id, type: event.type });
+  if (logError) {
+    if (logError.code === "23505") return Response.json({ received: true, duplicate: true });
+    return new Response("DB error", { status: 500 });
+  }
+
   const patch = computeProfilePatchFromEvent(event);
   if (patch) {
-    const admin = createSupabaseAdminClient();
-    if (admin) {
-      const update: ProfileUpdate = {};
-      if (patch.stripeCustomerId) update.stripe_customer_id = patch.stripeCustomerId;
-      if (patch.subscriptionStatus) update.subscription_status = patch.subscriptionStatus;
-      if (patch.currentPeriodEnd !== undefined) update.current_period_end = patch.currentPeriodEnd;
+    const update: ProfileUpdate = {};
+    if (patch.stripeCustomerId) update.stripe_customer_id = patch.stripeCustomerId;
+    if (patch.subscriptionStatus) update.subscription_status = patch.subscriptionStatus;
+    if (patch.currentPeriodEnd !== undefined) update.current_period_end = patch.currentPeriodEnd;
 
-      if (Object.keys(update).length > 0) {
-        if (patch.userId) {
-          await admin.from("profiles").update(update).eq("id", patch.userId);
-        } else if (patch.stripeCustomerId) {
-          await admin
-            .from("profiles")
-            .update(update)
-            .eq("stripe_customer_id", patch.stripeCustomerId);
-        }
-      }
+    if (Object.keys(update).length > 0) {
+      // Anchor on userId; fall back to the (now unique) customer id for subscription events.
+      const result = patch.userId
+        ? await admin.from("profiles").update(update).eq("id", patch.userId)
+        : patch.stripeCustomerId
+          ? await admin
+              .from("profiles")
+              .update(update)
+              .eq("stripe_customer_id", patch.stripeCustomerId)
+          : null;
+      // Surface DB failures so Stripe retries instead of silently dropping the change.
+      if (result?.error) return new Response("DB error", { status: 500 });
     }
   }
 

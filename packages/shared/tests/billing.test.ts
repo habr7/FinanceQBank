@@ -48,7 +48,9 @@ describe("getEntitlement", () => {
     expect(getEntitlement("past_due", 5)).toMatchObject({ unlimited: false, canAnswer: true });
   });
 
-  it("treats past_due / canceled as free (not unlimited)", () => {
+  it("treats past_due / canceled as free, not unlimited (no grace period)", () => {
+    // A past_due user who already used the free allowance is locked out (no grace).
+    expect(getEntitlement("past_due", FREE_QUESTION_LIMIT).canAnswer).toBe(false);
     expect(getEntitlement("canceled", FREE_QUESTION_LIMIT).canAnswer).toBe(false);
   });
 });

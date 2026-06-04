@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  getEntitlement,
   selectPracticeQuestions,
   type Difficulty,
   type OptionLabel,
@@ -53,23 +54,33 @@ function shuffle<T>(items: readonly T[]): T[] {
   return copy;
 }
 
+export type StartPracticeResult =
+  | { ok: true; sessionId: string }
+  | { ok: false; reason: "paywall" | "no-questions" | "unavailable" };
+
 /**
  * Create a practice session and persist its ordered question list. Selects from
- * published questions only, prefers questions the user has not answered, and
- * applies the standard difficulty mix. Returns the new session id, or null if
- * Supabase is unconfigured / there are no questions to serve.
+ * published questions only, prefers questions the user has not answered, applies
+ * the standard difficulty mix, and enforces the free-tier entitlement: free users
+ * are capped at the remaining free questions and blocked (paywall) once exhausted.
  */
 export async function startPracticeSession(input: {
   topics?: string[];
   count: number;
-}): Promise<string | null> {
+}): Promise<StartPracticeResult> {
   const supabase = await createSupabaseServerClient();
-  if (!supabase) return null;
+  if (!supabase) return { ok: false, reason: "unavailable" };
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return null;
+  if (!user) return { ok: false, reason: "unavailable" };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("subscription_status")
+    .eq("id", user.id)
+    .single();
 
   let query = supabase.from("questions").select("id, difficulty").eq("status", "published");
   if (input.topics && input.topics.length > 0) {
@@ -80,7 +91,7 @@ export async function startPracticeSession(input: {
     id: q.id,
     difficulty: q.difficulty,
   }));
-  if (allCandidates.length === 0) return null;
+  if (allCandidates.length === 0) return { ok: false, reason: "no-questions" };
 
   const { data: priorAttempts } = await supabase
     .from("attempts")
@@ -88,10 +99,17 @@ export async function startPracticeSession(input: {
     .eq("user_id", user.id);
   const answeredIds = new Set((priorAttempts ?? []).map((a) => a.question_id));
 
+  const entitlement = getEntitlement(profile?.subscription_status ?? "free", answeredIds.size);
+  if (!entitlement.canAnswer) return { ok: false, reason: "paywall" };
+
+  const cap = entitlement.unlimited
+    ? input.count
+    : Math.min(input.count, entitlement.remaining ?? 0);
+
   const fresh = allCandidates.filter((c) => !answeredIds.has(c.id));
   const pool = fresh.length > 0 ? fresh : allCandidates;
-  const chosen = selectPracticeQuestions(shuffle(pool), input.count);
-  if (chosen.length === 0) return null;
+  const chosen = selectPracticeQuestions(shuffle(pool), cap);
+  if (chosen.length === 0) return { ok: false, reason: "no-questions" };
 
   const { data: session, error } = await supabase
     .from("practice_sessions")
@@ -105,8 +123,8 @@ export async function startPracticeSession(input: {
     .select("id")
     .single();
 
-  if (error || !session) return null;
-  return session.id;
+  if (error || !session) return { ok: false, reason: "unavailable" };
+  return { ok: true, sessionId: session.id };
 }
 
 /** Load a session and its questions (no answer key / explanation pre-submit). */

@@ -25,9 +25,10 @@ export async function startPracticeAction(formData: FormData): Promise<void> {
     .map(String)
     .filter((value) => isTopicCode(value));
 
-  const sessionId = await startPracticeSession({ topics, count });
-  if (!sessionId) redirect("/practice?error=no-questions");
-  redirect(`/practice/${sessionId}`);
+  const result = await startPracticeSession({ topics, count });
+  if (result.ok) redirect(`/practice/${result.sessionId}`);
+  if (result.reason === "unavailable") redirect("/login");
+  redirect(`/practice?error=${result.reason}`);
 }
 
 export async function submitAnswerAction(input: {

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getDashboardStats } from "@/lib/data/dashboard";
+import { getUserBilling } from "@/lib/data/billing";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,11 @@ function formatPct(value: number | null): string {
   return value === null ? "—" : `${Math.round(value)}%`;
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ checkout?: string }>;
+}) {
   const supabase = await createSupabaseServerClient();
   if (!supabase) redirect("/login");
 
@@ -30,7 +35,9 @@ export default async function DashboardPage() {
     .eq("id", user.id)
     .single();
 
+  const { checkout } = await searchParams;
   const stats = await getDashboardStats(TOPICS.map((t) => t.code));
+  const billing = await getUserBilling();
 
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-10 px-6 py-12">
@@ -66,6 +73,37 @@ export default async function DashboardPage() {
         />
         <Stat label="Plan" value={profile?.subscription_status ?? "free"} capitalize />
       </section>
+
+      {checkout === "success" ? (
+        <p className="rounded-md border border-border p-4 text-sm">
+          Thanks for subscribing — your plan is active. It may take a moment to reflect here.
+        </p>
+      ) : null}
+
+      {billing ? (
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-4 text-sm">
+          {billing.entitlement.unlimited ? (
+            <>
+              <span>You have unlimited access. Manage your subscription anytime.</span>
+              <form action="/api/stripe/portal" method="post">
+                <Button variant="outline" size="sm" type="submit">
+                  Manage billing
+                </Button>
+              </form>
+            </>
+          ) : (
+            <>
+              <span>
+                Free plan: <strong>{billing.entitlement.remaining}</strong> of{" "}
+                {billing.entitlement.limit} questions remaining.
+              </span>
+              <Button asChild size="sm">
+                <Link href="/upgrade">Upgrade for unlimited</Link>
+              </Button>
+            </>
+          )}
+        </section>
+      ) : null}
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">

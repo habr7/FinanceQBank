@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { TOPICS } from "@charterbank/shared";
 
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/supabase/server";
+import { getUserBilling } from "@/lib/data/billing";
 import { startPracticeAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +18,8 @@ export default async function PracticeStartPage({
   if (!user) redirect("/login");
 
   const { error } = await searchParams;
+  const billing = await getUserBilling();
+  const entitlement = billing?.entitlement;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-8 px-6 py-12">
@@ -30,6 +34,24 @@ export default async function PracticeStartPage({
         <p className="rounded-md border border-border p-4 text-sm text-muted">
           No published questions match that selection yet. Try a different topic or check back once
           more content is published.
+        </p>
+      ) : null}
+
+      {error === "paywall" || entitlement?.canAnswer === false ? (
+        <div className="flex flex-col gap-3 rounded-md border border-border p-4 text-sm">
+          <p className="font-medium">You&apos;ve used all {entitlement?.limit} free questions.</p>
+          <p className="text-muted">
+            Unlock unlimited practice, full mocks, and smart review to keep going.
+          </p>
+          <div>
+            <Button asChild size="sm">
+              <Link href="/upgrade">Upgrade</Link>
+            </Button>
+          </div>
+        </div>
+      ) : entitlement && !entitlement.unlimited ? (
+        <p className="text-sm text-muted">
+          Free plan: {entitlement.remaining} of {entitlement.limit} questions remaining.
         </p>
       ) : null}
 

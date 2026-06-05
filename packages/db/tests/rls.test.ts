@@ -116,6 +116,11 @@ describeDb("Row Level Security", () => {
           [userA, [publishedQuestionId]],
         )
       ).rows[0].id as string;
+
+      await admin.query(
+        "insert into public.spaced_repetition_cards (user_id, question_id, due_at) values ($1, $2, now())",
+        [userA, publishedQuestionId],
+      );
     } finally {
       admin.release();
     }
@@ -304,6 +309,19 @@ describeDb("Row Level Security", () => {
       c.query("update public.question_reports set status = 'triaged' where id = $1", [reportBId]),
     );
     expect(asAdmin.rowCount).toBe(1);
+  });
+
+  it("a user sees only their own spaced-repetition cards", async () => {
+    const own = await asUser(userA, (c) =>
+      c.query("select question_id from public.spaced_repetition_cards"),
+    );
+    expect(own.rows.every((r) => r.question_id === publishedQuestionId)).toBe(true);
+    expect(own.rowCount).toBe(1);
+
+    const other = await asUser(userB, (c) =>
+      c.query("select question_id from public.spaced_repetition_cards where user_id = $1", [userA]),
+    );
+    expect(other.rowCount).toBe(0);
   });
 
   it("accepts the mock session modes", async () => {

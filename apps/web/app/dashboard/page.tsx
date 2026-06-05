@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { APP_NAME, LEGAL_DISCLAIMER, TOPICS, WEAK_TOPIC_THRESHOLD } from "@charterbank/shared";
+import {
+  APP_NAME,
+  LEGAL_DISCLAIMER,
+  TOPICS,
+  WEAK_TOPIC_THRESHOLD,
+  suggestNextSession,
+} from "@charterbank/shared";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getDashboardStats } from "@/lib/data/dashboard";
+import { getDashboardStats, getRetentionSummary } from "@/lib/data/dashboard";
 import { getUserBilling } from "@/lib/data/billing";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +44,12 @@ export default async function DashboardPage({
   const { checkout } = await searchParams;
   const stats = await getDashboardStats(TOPICS.map((t) => t.code));
   const billing = await getUserBilling();
+  const retention = await getRetentionSummary();
+  const suggestion = suggestNextSession({
+    dueCount: retention.dueCount,
+    weakTopics: (stats?.weakTopics ?? []).map((c) => TOPIC_NAME.get(c) ?? c),
+    totalAnswered: stats?.totalAnswered ?? 0,
+  });
 
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-10 px-6 py-12">
@@ -80,6 +92,28 @@ export default async function DashboardPage({
           }
         />
         <Stat label="Plan" value={profile?.subscription_status ?? "free"} capitalize />
+      </section>
+
+      <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-4 text-sm">
+        <div className="flex items-center gap-6">
+          <span>
+            <span className="text-muted">Suggested next:</span>{" "}
+            <span className="font-medium">{suggestion.label}</span>
+          </span>
+          <span className="text-xs text-muted">
+            {retention.dueCount} due · {retention.streak}-day streak
+          </span>
+        </div>
+        <div className="flex gap-2">
+          {retention.dueCount > 0 ? (
+            <Button asChild size="sm" variant="outline">
+              <Link href="/review">Review {retention.dueCount} due</Link>
+            </Button>
+          ) : null}
+          <Button asChild size="sm">
+            <Link href={suggestion.href}>Go</Link>
+          </Button>
+        </div>
       </section>
 
       {checkout === "success" ? (

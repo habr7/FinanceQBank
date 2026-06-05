@@ -1,8 +1,40 @@
 import "server-only";
 
-import { computeDashboardStats, type AttemptLike, type DashboardStats } from "@charterbank/shared";
+import {
+  computeDashboardStats,
+  computeStreak,
+  type AttemptLike,
+  type DashboardStats,
+} from "@charterbank/shared";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+export interface RetentionSummary {
+  dueCount: number;
+  streak: number;
+}
+
+/** Due spaced-repetition cards and the current daily streak for the current user. */
+export async function getRetentionSummary(): Promise<RetentionSummary> {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return { dueCount: 0, streak: 0 };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { dueCount: 0, streak: 0 };
+
+  const [{ count }, { data: attempts }] = await Promise.all([
+    supabase
+      .from("spaced_repetition_cards")
+      .select("question_id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .lte("due_at", new Date().toISOString()),
+    supabase.from("attempts").select("answered_at").eq("user_id", user.id),
+  ]);
+
+  const days = [...new Set((attempts ?? []).map((a) => a.answered_at.slice(0, 10)))];
+  return { dueCount: count ?? 0, streak: computeStreak(days, new Date()) };
+}
 
 /**
  * Per-user dashboard stats. Attempts and the questions they reference are read

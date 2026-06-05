@@ -4,7 +4,12 @@ import { redirect } from "next/navigation";
 import { isTopicCode, type OptionLabel } from "@charterbank/shared";
 import type { ReportType } from "@charterbank/db";
 
-import { startPracticeSession, submitAnswer, type SubmitAnswerResult } from "@/lib/data/practice";
+import {
+  startPracticeSession,
+  startReviewSession,
+  submitAnswer,
+  type SubmitAnswerResult,
+} from "@/lib/data/practice";
 import { reportIssue, saveNote, toggleBookmark } from "@/lib/data/engagement";
 
 const VALID_REPORT_TYPES: ReportType[] = [
@@ -29,6 +34,14 @@ export async function startPracticeAction(formData: FormData): Promise<void> {
   if (result.ok) redirect(`/practice/${result.sessionId}`);
   if (result.reason === "unavailable") redirect("/login");
   redirect(`/practice?error=${result.reason}`);
+}
+
+/** Form action: start a spaced-repetition review session and redirect into it. */
+export async function startReviewAction(): Promise<void> {
+  const result = await startReviewSession();
+  if (result.ok) redirect(`/practice/${result.sessionId}`);
+  if (result.reason === "unavailable") redirect("/login");
+  redirect("/practice?error=no-reviews");
 }
 
 export async function submitAnswerAction(input: {

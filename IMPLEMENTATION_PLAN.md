@@ -189,12 +189,26 @@ sums verified) ✅; results only at the end ✅; per-topic breakdown ✅. Tests:
 
 ---
 
-## Phase 7 — Retention & adaptive practice ⬜
+## Phase 7 — Retention & adaptive practice ✅
 
 **Goal:** spaced repetition, suggested next session, weak-topic recommender, streaks,
-basic transactional emails. No unnecessary complexity.
+basic transactional emails.
 
-**Acceptance:** wrong answers enter review; dashboard recommends next session; due cards appear.
+Delivered:
+
+- `shared/retention.ts` (pure, tested): `nextReview` (SM-2; wrong answers re-queue immediately),
+  `computeStreak`, `suggestNextSession`; `shared/email.ts` transactional templates (welcome, due-review).
+- Practice answers update `spaced_repetition_cards` (`recordReview`); `startReviewSession` builds a
+  review session from due cards → reuses the practice runner; `/review` route.
+- Dashboard: "Suggested next" recommender (review → first session → weakest topic → fresh practice),
+  due-cards count, daily streak, and a Review CTA.
+
+**Acceptance:** wrong answers enter review (SR reset → due now) ✅; dashboard recommends the next
+session ✅; due cards appear + a review session pulls them ✅. Tests: shared 64 (SM-2, streak,
+recommender, email templates), db RLS 23/23 (SR card ownership); lint/typecheck/test/build green.
+
+> Transactional email templates are tested and provider-agnostic; scheduled delivery (cron +
+> Resend/Postmark) lands with the production infra in Phase 8.
 
 ---
 

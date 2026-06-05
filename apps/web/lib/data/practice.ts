@@ -1,7 +1,9 @@
 import "server-only";
 
 import {
+  DEFAULT_EASE_FACTOR,
   getEntitlement,
+  nextReview,
   selectPracticeQuestions,
   type Difficulty,
   type OptionLabel,
@@ -10,6 +12,91 @@ import {
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+
+type ServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
+
+/** Update the spaced-repetition card for a question after it's answered. */
+async function recordReview(
+  supabase: ServerClient,
+  userId: string,
+  questionId: string,
+  correct: boolean,
+): Promise<void> {
+  const { data: card } = await supabase
+    .from("spaced_repetition_cards")
+    .select("ease_factor, interval_days, repetitions")
+    .eq("user_id", userId)
+    .eq("question_id", questionId)
+    .maybeSingle();
+
+  const schedule = nextReview(
+    {
+      easeFactor: card?.ease_factor ?? DEFAULT_EASE_FACTOR,
+      intervalDays: card?.interval_days ?? 0,
+      repetitions: card?.repetitions ?? 0,
+    },
+    correct,
+  );
+
+  await supabase.from("spaced_repetition_cards").upsert(
+    {
+      user_id: userId,
+      question_id: questionId,
+      ease_factor: schedule.easeFactor,
+      interval_days: schedule.intervalDays,
+      repetitions: schedule.repetitions,
+      due_at: new Date(Date.now() + schedule.dueInDays * 86_400_000).toISOString(),
+      last_reviewed_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,question_id" },
+  );
+}
+
+export type StartReviewResult =
+  | { ok: true; sessionId: string }
+  | { ok: false; reason: "empty" | "unavailable" };
+
+/** Build a review session from spaced-repetition cards that are due now. */
+export async function startReviewSession(): Promise<StartReviewResult> {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return { ok: false, reason: "unavailable" };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, reason: "unavailable" };
+
+  const { data: due } = await supabase
+    .from("spaced_repetition_cards")
+    .select("question_id")
+    .eq("user_id", user.id)
+    .lte("due_at", new Date().toISOString())
+    .limit(50);
+
+  const dueIds = (due ?? []).map((c) => c.question_id);
+  if (dueIds.length === 0) return { ok: false, reason: "empty" };
+
+  // Only review questions that are still published.
+  const { data: published } = await supabase
+    .from("questions")
+    .select("id")
+    .in("id", dueIds)
+    .eq("status", "published");
+  const ids = (published ?? []).map((q) => q.id);
+  if (ids.length === 0) return { ok: false, reason: "empty" };
+
+  const { data: session, error } = await supabase
+    .from("practice_sessions")
+    .insert({
+      user_id: user.id,
+      mode: "review_errors",
+      total_questions: ids.length,
+      question_ids: ids,
+    })
+    .select("id")
+    .single();
+  if (error || !session) return { ok: false, reason: "unavailable" };
+  return { ok: true, sessionId: session.id };
+}
 
 export interface PracticeOption {
   label: OptionLabel;
@@ -250,6 +337,9 @@ export async function submitAnswer(input: {
     .select("is_correct")
     .single();
   if (error || !attempt) return null;
+
+  // Update spaced repetition: wrong answers re-enter the review queue immediately.
+  await recordReview(supabase, user.id, input.questionId, attempt.is_correct);
 
   const admin = createSupabaseAdminClient();
   if (!admin) return null;

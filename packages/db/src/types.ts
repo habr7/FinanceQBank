@@ -178,6 +178,16 @@ export type UserQuestionNoteRow = {
   updated_at: string;
 };
 
+export type SpacedRepetitionCardRow = {
+  user_id: string;
+  question_id: string;
+  ease_factor: number;
+  interval_days: number;
+  repetitions: number;
+  due_at: string;
+  last_reviewed_at: string | null;
+};
+
 export type StripeEventRow = {
   id: string;
   type: string;
@@ -231,6 +241,7 @@ export type Database = {
       bookmarks: TableShape<BookmarkRow, "user_id" | "question_id">;
       user_question_notes: TableShape<UserQuestionNoteRow, "user_id" | "question_id" | "note_md">;
       question_reports: TableShape<QuestionReportRow, "question_id" | "report_type">;
+      spaced_repetition_cards: TableShape<SpacedRepetitionCardRow, "user_id" | "question_id">;
       question_audits: TableShape<QuestionAuditRow, "question_id" | "audit_type" | "result">;
       content_jobs: TableShape<ContentJobRow, "job_type">;
       stripe_events: TableShape<StripeEventRow, "id" | "type">;

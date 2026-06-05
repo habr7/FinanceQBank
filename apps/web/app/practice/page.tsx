@@ -37,6 +37,13 @@ export default async function PracticeStartPage({
         </p>
       ) : null}
 
+      {error === "no-reviews" ? (
+        <p className="rounded-md border border-border p-4 text-sm text-muted">
+          Nothing is due for review right now. Answer more questions and they&apos;ll return on a
+          spaced schedule.
+        </p>
+      ) : null}
+
       {error === "paywall" || entitlement?.canAnswer === false ? (
         <div className="flex flex-col gap-3 rounded-md border border-border p-4 text-sm">
           <p className="font-medium">You&apos;ve used all {entitlement?.limit} free questions.</p>

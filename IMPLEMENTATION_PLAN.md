@@ -139,13 +139,28 @@ Review with `ai-content-pipeline-engineer` + `cfa-domain-reviewer`.
 
 ---
 
-## Phase 5 — Admin Content Studio ⬜
+## Phase 5 — Admin Content Studio ✅
 
 **Goal:** admin/reviewer-only UI to list questions by status, view audits/reports, publish,
 quarantine, retire, re-run audit. Secure server actions + RLS.
 
-**Acceptance:** students can't access admin; admin sees drafts/audits; admin can publish/quarantine;
-reports appear and can be triaged.
+Delivered:
+
+- `requireAdmin()` gate (layout-level) + `getAdminContext()` for server actions; non-admins
+  redirect to /dashboard, unauthenticated to /login.
+- `/admin` (questions by status filter), `/admin/questions/[id]` (stem/options/answer key,
+  explanation, audit history, reports, provenance + actions), `/admin/reports` (triage).
+- Server actions: publish / quarantine / retire, re-run deterministic audit (reuses the
+  pipeline's `runDeterministicValidators`), triage report — all re-check admin first and use
+  the service-role client (admins can read `correct_option`, which is revoked from `authenticated`).
+- **Pipeline → Postgres**: `PgContentStore` writes drafts/audits/jobs into the Phase 1 tables
+  (migration `0009` adds `questions.batch_id/objective_code/question_type`); the store factory
+  uses it when `SUPABASE_DB_URL` is set, else the offline JSON store. Verified end-to-end against
+  a real Postgres cluster.
+
+**Acceptance:** students can't access admin (redirect) ✅; admin sees drafts/audits ✅; admin can
+publish/quarantine/retire/re-audit ✅; reports appear and can be triaged ✅. Tests: db RLS 21/21
+(adds admin status-change + report-triage), ai-content 38 incl. PgStore round-trip; lint/typecheck/test/build green.
 
 ---
 

@@ -49,6 +49,11 @@ export default async function DashboardPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {profile?.role === "admin" || profile?.role === "reviewer" ? (
+            <Button asChild size="sm" variant="outline">
+              <Link href="/admin">Content Studio</Link>
+            </Button>
+          ) : null}
           <Button asChild size="sm">
             <Link href="/practice">Start practice</Link>
           </Button>

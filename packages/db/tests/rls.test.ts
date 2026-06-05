@@ -20,6 +20,7 @@ describeDb("Row Level Security", () => {
   let activeObjectiveId = "";
   let draftObjectiveId = "";
   let sessionAId = "";
+  let reportBId = "";
 
   /** Run `fn` inside a transaction acting as a given role, always rolling back. */
   async function asUser<T>(
@@ -100,11 +101,13 @@ describeDb("Row Level Security", () => {
           [uid, publishedQuestionId],
         );
       }
-      await admin.query(
-        `insert into public.question_reports (user_id, question_id, report_type, message)
-         values ($1, $2, 'typo', 'typo in stem')`,
-        [userB, publishedQuestionId],
-      );
+      reportBId = (
+        await admin.query(
+          `insert into public.question_reports (user_id, question_id, report_type, message)
+           values ($1, $2, 'typo', 'typo in stem') returning id`,
+          [userB, publishedQuestionId],
+        )
+      ).rows[0].id as string;
 
       sessionAId = (
         await admin.query(
@@ -277,6 +280,30 @@ describeDb("Row Level Security", () => {
       c.query("select id from public.practice_sessions where id = $1", [sessionAId]),
     );
     expect(other.rowCount).toBe(0);
+  });
+
+  it("lets an admin change a question's status but not a student", async () => {
+    const asStudent = await asUser(userA, (c) =>
+      c.query("update public.questions set status = 'published' where id = $1", [draftQuestionId]),
+    );
+    expect(asStudent.rowCount).toBe(0);
+
+    const asAdmin = await asUser(adminId, (c) =>
+      c.query("update public.questions set status = 'published' where id = $1", [draftQuestionId]),
+    );
+    expect(asAdmin.rowCount).toBe(1);
+  });
+
+  it("lets an admin triage a report but not a student", async () => {
+    const asStudent = await asUser(userA, (c) =>
+      c.query("update public.question_reports set status = 'triaged' where id = $1", [reportBId]),
+    );
+    expect(asStudent.rowCount).toBe(0);
+
+    const asAdmin = await asUser(adminId, (c) =>
+      c.query("update public.question_reports set status = 'triaged' where id = $1", [reportBId]),
+    );
+    expect(asAdmin.rowCount).toBe(1);
   });
 
   it("hides the stripe_events idempotency log from students", async () => {

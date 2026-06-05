@@ -55,10 +55,13 @@ pnpm format         # prettier write
 pnpm db:test                                         # boot throwaway Postgres, apply migrations + seed, run RLS suite
 pnpm db:reset | db:migrate | db:seed                 # via Supabase CLI (supabase db reset / push)
 
-# Implemented in later phases (stubbed until then):
-pnpm content:plan | content:generate | content:audit # Phase 4
-pnpm content:publish | content:quarantine            # Phase 4
+# Content pipeline (Phase 4). Writes to Postgres when SUPABASE_DB_URL is set, else a local JSON store:
+pnpm content:plan | content:generate | content:audit
+pnpm content:publish | content:quarantine
 ```
+
+The content pipeline store: `SUPABASE_DB_URL` → Postgres (Phase 1 tables, read by the Admin
+Content Studio); otherwise an offline JSON store under `.charterbank-content/`.
 
 ## Development workflow
 

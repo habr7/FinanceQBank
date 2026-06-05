@@ -41,6 +41,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@charterbank/ai-content':
+        specifier: workspace:*
+        version: link:../../packages/ai-content
       '@charterbank/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -117,6 +120,9 @@ importers:
       '@charterbank/shared':
         specifier: workspace:*
         version: link:../shared
+      pg:
+        specifier: ^8.21.0
+        version: 8.21.0
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -124,6 +130,9 @@ importers:
       '@types/node':
         specifier: ^25.9.1
         version: 25.9.1
+      '@types/pg':
+        specifier: ^8.20.0
+        version: 8.20.0
       eslint:
         specifier: ^10.4.1
         version: 10.4.1(jiti@2.7.0)

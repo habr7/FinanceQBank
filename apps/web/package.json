@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@charterbank/ai-content": "workspace:*",
     "@charterbank/db": "workspace:*",
     "@charterbank/shared": "workspace:*",
     "@radix-ui/react-slot": "^1.2.4",

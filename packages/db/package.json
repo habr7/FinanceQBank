@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:db": "bash scripts/test-rls.sh",
+    "test:db": "bash ../../scripts/with-test-db.sh pnpm exec vitest run",
     "build": "tsc --noEmit"
   },
   "devDependencies": {

@@ -84,9 +84,43 @@ export type QuestionRow = {
   generated_by_model: string | null;
   validated_by_model: string | null;
   prompt_version: string | null;
+  batch_id: string | null;
+  objective_code: string | null;
+  question_type: string | null;
   published_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type QuestionAuditRow = {
+  id: string;
+  question_id: string;
+  audit_type:
+    | "independent_solver"
+    | "validator"
+    | "adversarial_review"
+    | "math_check"
+    | "ip_check"
+    | "human_review";
+  result: "pass" | "warning" | "fail" | "corrected";
+  findings: unknown;
+  corrected_payload: unknown;
+  model: string | null;
+  reviewer_id: string | null;
+  created_at: string;
+};
+
+export type ContentJobRow = {
+  id: string;
+  job_type: string;
+  status: "queued" | "running" | "succeeded" | "failed" | "canceled";
+  payload: unknown;
+  result: unknown;
+  error_message: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  created_by: string | null;
+  created_at: string;
 };
 
 export type QuestionOptionRow = {
@@ -191,6 +225,8 @@ export type Database = {
       bookmarks: TableShape<BookmarkRow, "user_id" | "question_id">;
       user_question_notes: TableShape<UserQuestionNoteRow, "user_id" | "question_id" | "note_md">;
       question_reports: TableShape<QuestionReportRow, "question_id" | "report_type">;
+      question_audits: TableShape<QuestionAuditRow, "question_id" | "audit_type" | "result">;
+      content_jobs: TableShape<ContentJobRow, "job_type">;
       stripe_events: TableShape<StripeEventRow, "id" | "type">;
     };
     Views: EmptyMap;

@@ -1,0 +1,42 @@
+{
+  "name": "charterbank",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Independent, affordable CFA Level I Q-Bank SaaS with AI-assisted batch content generation.",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "echo \"[charterbank] e2e tests arrive in a later phase\" && exit 0",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,md,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,md,css}\"",
+    "db:reset": "supabase db reset",
+    "db:migrate": "supabase db push",
+    "db:seed": "supabase db reset",
+    "db:test": "pnpm --filter @charterbank/db test:db",
+    "content:plan": "pnpm --filter @charterbank/ai-content exec tsx src/cli.ts plan",
+    "content:generate": "pnpm --filter @charterbank/ai-content exec tsx src/cli.ts generate",
+    "content:audit": "pnpm --filter @charterbank/ai-content exec tsx src/cli.ts audit",
+    "content:publish": "pnpm --filter @charterbank/ai-content exec tsx src/cli.ts publish",
+    "content:quarantine": "pnpm --filter @charterbank/ai-content exec tsx src/cli.ts quarantine"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@next/eslint-plugin-next": "^16.2.7",
+    "eslint": "^10.4.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.6.0",
+    "prettier": "^3.8.3",
+    "turbo": "^2.9.16",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.1",
+    "vitest": "^4.1.8"
+  }
+}

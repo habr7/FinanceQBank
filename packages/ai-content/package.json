@@ -1,0 +1,39 @@
+{
+  "name": "@charterbank/ai-content",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./validators": "./src/validators/index.ts",
+    "./gates": "./src/gates/index.ts",
+    "./pipeline": "./src/pipeline/state-machine.ts"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:db": "bash ../../scripts/with-test-db.sh pnpm exec vitest run",
+    "build": "tsc --noEmit",
+    "plan": "tsx src/cli.ts plan",
+    "generate": "tsx src/cli.ts generate",
+    "audit": "tsx src/cli.ts audit",
+    "publish": "tsx src/cli.ts publish",
+    "quarantine": "tsx src/cli.ts quarantine"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "@types/pg": "^8.20.0",
+    "eslint": "^10.4.1",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  },
+  "dependencies": {
+    "@charterbank/shared": "workspace:*",
+    "pg": "^8.21.0",
+    "zod": "^4.4.3"
+  }
+}

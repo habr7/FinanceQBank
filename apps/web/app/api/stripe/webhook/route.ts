@@ -3,6 +3,7 @@ import type { SubscriptionStatusValue } from "@charterbank/shared";
 import { createStripeClient } from "@/lib/stripe/server";
 import { computeProfilePatchFromEvent, constructStripeEvent } from "@/lib/stripe/webhook";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { reportError } from "@/lib/observability";
 
 export const runtime = "nodejs";
 
@@ -63,7 +64,10 @@ export async function POST(request: Request) {
               .eq("stripe_customer_id", patch.stripeCustomerId)
           : null;
       // Surface DB failures so Stripe retries instead of silently dropping the change.
-      if (result?.error) return new Response("DB error", { status: 500 });
+      if (result?.error) {
+        reportError(result.error, { scope: "stripe_webhook", eventType: event.type });
+        return new Response("DB error", { status: 500 });
+      }
     }
   }
 

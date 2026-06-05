@@ -212,10 +212,21 @@ recommender, email templates), db RLS 23/23 (SR card ownership); lint/typecheck/
 
 ---
 
-## Phase 8 — Production ⬜
+## Phase 8 — Production ✅
 
 **Goal:** CI/CD, Vercel deploy, Supabase production, Stripe production checklist, Sentry/PostHog,
 backup & runbook.
 
-**Acceptance:** CI runs lint/typecheck/test/build; deploy docs complete; release checklist exists;
-basic monitoring integrated. Use `devops-release-engineer` + `security-billing-engineer`.
+Delivered:
+
+- GitHub Actions CI (`.github/workflows/ci.yml`): a **build** job (lint/typecheck/test/build) and a
+  **database** job that boots Postgres from zero and runs the RLS + pipeline integration suites.
+- Env validation: `PRODUCTION_REQUIRED_ENV` / `SERVER_ONLY_ENV` + `missingEnv` (tested) enforced at
+  server startup via `apps/web/instrumentation.ts`.
+- Monitoring: PostHog client analytics (`components/analytics.tsx`, env-gated) and a server error
+  chokepoint (`lib/observability.ts`) wired into the Stripe webhook; documented Sentry hook.
+- Docs: full `docs/DEPLOYMENT.md` (CI, Supabase, Vercel, Stripe production checklist, Sentry/PostHog,
+  release checklist) and `docs/RUNBOOK.md` (incidents, quarantine, refunds, backups, escalation).
+
+**Acceptance:** CI runs lint/typecheck/test/build (+ DB integration) ✅; deploy docs complete ✅;
+release checklist exists ✅; basic monitoring integrated ✅. Tests: shared 67; lint/typecheck/test/build green.

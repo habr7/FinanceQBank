@@ -140,6 +140,11 @@ export async function getMockData(sessionId: string): Promise<MockData> {
     };
   }
 
+  // Mocks are a paid feature; re-check entitlement so a lapsed subscriber can't
+  // keep accessing an in-progress mock's questions after cancelling.
+  const billing = await getUserBilling();
+  if (!billing?.entitlement.unlimited) return null;
+
   const [{ data: qrows }, { data: orows }] = await Promise.all([
     supabase.from("questions").select("id, topic_code, difficulty, stem, vignette").in("id", ids),
     supabase

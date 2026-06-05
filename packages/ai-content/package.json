@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./validators": "./src/validators/index.ts",
-    "./gates": "./src/gates/index.ts"
+    "./gates": "./src/gates/index.ts",
+    "./pipeline": "./src/pipeline/state-machine.ts"
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",

@@ -54,17 +54,26 @@ export async function POST(request: Request) {
     if (patch.currentPeriodEnd !== undefined) update.current_period_end = patch.currentPeriodEnd;
 
     if (Object.keys(update).length > 0) {
+      // Need a profile anchor to apply the change. If neither is present (e.g. a
+      // subscription with a null customer and no metadata), fail closed so Stripe
+      // retries rather than silently dropping a status change (e.g. a cancellation).
+      if (!patch.userId && !patch.stripeCustomerId) {
+        reportError(new Error("webhook patch has no profile anchor"), {
+          scope: "stripe_webhook",
+          eventType: event.type,
+        });
+        return new Response("No profile anchor", { status: 400 });
+      }
+
       // Anchor on userId; fall back to the (now unique) customer id for subscription events.
       const result = patch.userId
         ? await admin.from("profiles").update(update).eq("id", patch.userId)
-        : patch.stripeCustomerId
-          ? await admin
-              .from("profiles")
-              .update(update)
-              .eq("stripe_customer_id", patch.stripeCustomerId)
-          : null;
+        : await admin
+            .from("profiles")
+            .update(update)
+            .eq("stripe_customer_id", patch.stripeCustomerId as string);
       // Surface DB failures so Stripe retries instead of silently dropping the change.
-      if (result?.error) {
+      if (result.error) {
         reportError(result.error, { scope: "stripe_webhook", eventType: event.type });
         return new Response("DB error", { status: 500 });
       }

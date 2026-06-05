@@ -4,9 +4,11 @@ import {
   runDeterministicValidators,
   type ValidationResult,
 } from "@charterbank/ai-content/validators";
+import { canTransition } from "@charterbank/ai-content/pipeline";
 import type { QuestionStatus, ReportStatus } from "@charterbank/db";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getAdminContext } from "@/lib/auth/admin";
 
 export interface AdminQuestionListItem {
   id: string;
@@ -120,8 +122,16 @@ export async function getAdminQuestion(id: string): Promise<AdminQuestionDetail 
 }
 
 export async function setQuestionStatus(id: string, status: QuestionStatus): Promise<boolean> {
+  if (!(await getAdminContext())) return false;
   const admin = createSupabaseAdminClient();
   if (!admin) return false;
+
+  // Enforce the pipeline state machine so the admin UI can't, e.g., publish a raw
+  // draft that never passed the audit gate (draft -> published is not allowed).
+  const { data: current } = await admin.from("questions").select("status").eq("id", id).single();
+  if (!current) return false;
+  if (!canTransition(current.status as QuestionStatus, status)) return false;
+
   const patch: { status: QuestionStatus; published_at?: string | null } = { status };
   if (status === "published") patch.published_at = new Date().toISOString();
   const { error } = await admin.from("questions").update(patch).eq("id", id);
@@ -133,6 +143,7 @@ export async function triageReport(
   status: ReportStatus,
   adminNotes: string,
 ): Promise<boolean> {
+  if (!(await getAdminContext())) return false;
   const admin = createSupabaseAdminClient();
   if (!admin) return false;
   const { error } = await admin
@@ -175,6 +186,7 @@ export interface RerunAuditResult {
  * on a stored question, record a fresh audit, and quarantine it if it now fails.
  */
 export async function rerunDeterministicAudit(id: string): Promise<RerunAuditResult | null> {
+  if (!(await getAdminContext())) return null;
   const admin = createSupabaseAdminClient();
   if (!admin) return null;
   const detail = await getAdminQuestion(id);

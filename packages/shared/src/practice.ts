@@ -1,6 +1,33 @@
-import { PRACTICE_DIFFICULTY_MIX, type Difficulty } from "./exam";
+import { MOCK_PRESETS, PRACTICE_DIFFICULTY_MIX, type Difficulty, type MockType } from "./exam";
+import { allocateQuestions, type TopicCode } from "./topics";
 
 const DIFFICULTY_ORDER: readonly Difficulty[] = ["easy", "medium", "hard"];
+
+export interface MockPlan {
+  type: MockType;
+  questions: number;
+  timeLimitSeconds: number;
+  sessions: number;
+  /** Per-topic question counts, weighted by exam allocation (sums to `questions`). */
+  allocation: Record<TopicCode, number>;
+}
+
+/** Resolve a mock type into its size, time limit, session count, and topic allocation. */
+export function mockQuestionPlan(type: MockType): MockPlan {
+  const preset = MOCK_PRESETS[type];
+  return {
+    type,
+    questions: preset.questions,
+    timeLimitSeconds: preset.timeLimitSeconds,
+    sessions: preset.sessions,
+    allocation: allocateQuestions(preset.questions),
+  };
+}
+
+/** Map a mock type to the practice_sessions.mode value. */
+export function mockSessionMode(type: MockType): "mock_mini" | "mock_half" | "mock_full" {
+  return type === "mini" ? "mock_mini" : type === "half" ? "mock_half" : "mock_full";
+}
 
 /**
  * Split `total` practice questions across difficulties using the default mix

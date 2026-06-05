@@ -24,7 +24,13 @@ export type QuestionStatus =
   | "published"
   | "quarantined"
   | "retired";
-export type SessionMode = "practice" | "review_errors" | "mock_half" | "mock_full" | "adaptive";
+export type SessionMode =
+  | "practice"
+  | "review_errors"
+  | "mock_half"
+  | "mock_full"
+  | "mock_mini"
+  | "adaptive";
 export type ReportType =
   | "wrong_answer"
   | "ambiguous"

@@ -3,10 +3,42 @@ import {
   WEAK_TOPIC_THRESHOLD,
   allocateDifficulty,
   computeDashboardStats,
+  mockQuestionPlan,
+  mockSessionMode,
   selectPracticeQuestions,
   type AttemptLike,
   type PracticeCandidate,
 } from "../src/practice";
+import { TOPIC_CODES } from "../src/topics";
+
+describe("mockQuestionPlan", () => {
+  it("half mock: 90 questions / 135 minutes, allocation sums to 90", () => {
+    const plan = mockQuestionPlan("half");
+    expect(plan.questions).toBe(90);
+    expect(plan.timeLimitSeconds).toBe(135 * 60);
+    expect(TOPIC_CODES.reduce((s, c) => s + plan.allocation[c], 0)).toBe(90);
+  });
+
+  it("full mock: 180 questions / 270 minutes / 2 sessions, allocation sums to 180", () => {
+    const plan = mockQuestionPlan("full");
+    expect(plan.questions).toBe(180);
+    expect(plan.timeLimitSeconds).toBe(270 * 60);
+    expect(plan.sessions).toBe(2);
+    expect(TOPIC_CODES.reduce((s, c) => s + plan.allocation[c], 0)).toBe(180);
+  });
+
+  it("mini mock: 30 questions, allocation sums to 30", () => {
+    const plan = mockQuestionPlan("mini");
+    expect(plan.questions).toBe(30);
+    expect(TOPIC_CODES.reduce((s, c) => s + plan.allocation[c], 0)).toBe(30);
+  });
+
+  it("maps mock types to session modes", () => {
+    expect(mockSessionMode("mini")).toBe("mock_mini");
+    expect(mockSessionMode("half")).toBe("mock_half");
+    expect(mockSessionMode("full")).toBe("mock_full");
+  });
+});
 
 describe("selectPracticeQuestions", () => {
   const make = (n: number, difficulty: PracticeCandidate["difficulty"]): PracticeCandidate[] =>

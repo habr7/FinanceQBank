@@ -306,6 +306,18 @@ describeDb("Row Level Security", () => {
     expect(asAdmin.rowCount).toBe(1);
   });
 
+  it("accepts the mock session modes", async () => {
+    for (const mode of ["mock_mini", "mock_half", "mock_full"]) {
+      const res = await asUser(userA, (c) =>
+        c.query(
+          "insert into public.practice_sessions (user_id, mode, total_questions) values ($1, $2, 1) returning id",
+          [userA, mode],
+        ),
+      );
+      expect(res.rowCount).toBe(1);
+    }
+  });
+
   it("hides the stripe_events idempotency log from students", async () => {
     await expect(
       asUser(userA, (c) => c.query("select id from public.stripe_events")),

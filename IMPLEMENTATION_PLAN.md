@@ -164,13 +164,28 @@ publish/quarantine/retire/re-audit ✅; reports appear and can be triaged ✅. T
 
 ---
 
-## Phase 6 — Mock mode & analytics ⬜
+## Phase 6 — Mock mode & analytics ✅
 
 **Goal:** half (90q/135m) and full (180q/270m, two sessions) mocks + mini mock (30q, weighted),
 timer, navigation, flag-for-review, final-only results, per-topic breakdown.
 
-**Acceptance:** half/full mocks with correct totals and timing; results only at the end;
-per-topic breakdown works.
+Delivered:
+
+- `shared`: `mockQuestionPlan(type)` (size, time limit, sessions, topic allocation) +
+  `mockSessionMode` (pure, tested).
+- Mock data layer: `startMock` (paid-gated, exam-weighted topic selection from published
+  questions), `getMockData` (active runner vs completed results), `submitMock` (insert all
+  attempts at finish → DB trigger grades → set completed_at). No answers/explanations are sent
+  to the client during the mock.
+- `/mock` (mini/half/full chooser, paid-gated), `/mock/[sessionId]` runner + results.
+- `MockRunner` client: countdown timer (auto-submit at zero), question navigator, flag-for-review
+  (F), keyboard A/B/C + arrows, two-section boundary + break notice for the full mock.
+- Results: overall score + per-topic breakdown (reuses `computeDashboardStats`).
+- Migration `0010` adds the `mock_mini` session mode.
+
+**Acceptance:** half = 90q/135m, full = 180q/270m across two sessions, mini = 30q (allocation
+sums verified) ✅; results only at the end ✅; per-topic breakdown ✅. Tests: shared 52, db RLS 22/22
+(adds mock-mode insert); lint/typecheck/test/build green; `/mock` gated.
 
 ---
 

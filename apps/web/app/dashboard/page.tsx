@@ -54,6 +54,9 @@ export default async function DashboardPage({
               <Link href="/admin">Content Studio</Link>
             </Button>
           ) : null}
+          <Button asChild size="sm" variant="outline">
+            <Link href="/mock">Mock exam</Link>
+          </Button>
           <Button asChild size="sm">
             <Link href="/practice">Start practice</Link>
           </Button>
